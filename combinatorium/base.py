@@ -1,6 +1,8 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 
+import re
+
 import numpy as np
 
 
@@ -112,6 +114,12 @@ class Agent(ABC):
     This class defines the core functionality for an agent that can act within a game
     environment by selecting actions based on the current board state.
     """
+
+    def __str__(self) -> str:
+        class_name = type(self).__name__
+        match = re.search(r"(.*)Agent$", class_name)
+
+        return match.group(1) if match else class_name
 
     @abstractmethod
     def act(self, board: Board) -> int:

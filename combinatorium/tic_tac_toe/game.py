@@ -43,8 +43,10 @@ class TicTacToe(Game):
         print(self._board)
 
     def __str__(self) -> str:
-        string = f"# {self._round}: Player {self._board.player_to_string(self._board.player)}" + "\n"
-        string += self._board.__str__()
+        player_symbol = self._board.player_to_string(self._board.player)
+        player_type = str(self._players[self._board.player])
+        string = f"# {self._round}: Player {player_symbol} ({player_type})" + "\n"
+        string += str(self._board)
         for a in self._board.possible_actions:
             string += "\n" + f"{a} -> {self._board.action_to_string(a)}"
 
