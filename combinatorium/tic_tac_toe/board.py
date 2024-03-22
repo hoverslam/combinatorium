@@ -30,6 +30,10 @@ class TicTacToeBoard(Board):
     def possible_actions(self) -> list[int]:
         return np.where(self._state.ravel() == 0)[0].tolist()
 
+    @property
+    def heuristic_value(self) -> float:
+        return float(self.evaluate()[1])
+
     def move(self, action: int) -> TicTacToeBoard:
         # Check if the given action is valid
         if action not in self.possible_actions:

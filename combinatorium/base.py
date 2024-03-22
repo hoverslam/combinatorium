@@ -70,6 +70,18 @@ class Board(ABC):
         """
         pass
 
+    @property
+    @abstractmethod
+    def heuristic_value(self) -> float:
+        """Return the heuristic value of the current board state.
+
+        This value represents an estimate of the desirability of the current state.
+
+        Return:
+            float: The heuristic value of the board state.
+        """
+        pass
+
     @abstractmethod
     def move(self, action: int) -> Board:
         """Apply a move to the board and return a new board representing the updated state.
