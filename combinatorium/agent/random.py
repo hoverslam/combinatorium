@@ -11,6 +11,7 @@ class RandomAgent(Agent):
     """
 
     def __init__(self) -> None:
+        """Initialize an agent that plays randomly."""
         super().__init__()
 
     def act(self, board: Board) -> int:
