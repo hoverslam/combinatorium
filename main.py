@@ -1,7 +1,8 @@
 from combinatorium.tic_tac_toe import TicTacToe
-from combinatorium.agent import RandomAgent, MinimaxAgent
+from combinatorium.agent import RandomAgent, MinimaxAgent, AlphaBetaAgent
 
-
-g = TicTacToe(player_one=RandomAgent(), player_two=MinimaxAgent(10))
+p1 = AlphaBetaAgent(10)
+p2 = MinimaxAgent(10)
+g = TicTacToe(p1, p2)
 g.reset()
 g.run()
