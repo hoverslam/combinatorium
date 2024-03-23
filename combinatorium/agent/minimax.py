@@ -13,7 +13,7 @@ class MinimaxAgent(Agent):
         """Initialize a new MinimaxAgent instance.
 
         Args:
-            depth (int): The maximum depth of the search tree explored by the Minimax algorithm.
+            depth (int, optional): The maximum depth of the search tree explored by the Minimax algorithm.
                 Defaults to 5.
         """
         super().__init__()

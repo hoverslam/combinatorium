@@ -5,19 +5,20 @@ import time
 
 
 class TicTacToe(Game):
-    """Tic-Tac-Toe game implementation."""
+    """Tic-tac-toe game implementation."""
 
     def __init__(self, player_one: Agent, player_two: Agent, board_size: int = 3) -> None:
-        """Initialize a new Tic-Tac-Toe game instance.
+        """Initialize a new Tic-tac-toe game instance.
 
         Args:
             player_one (Agent): The agent representing player one.
             player_two (Agent): The agent representing player two.
-            board_size (int, optional): The size of the Tic-Tac-Toe board. Defaults to 3.
+            board_size (int, optional): The size of the Tic-tac-toe board. Defaults to 3.
         """
         super().__init__()
         self._board_size = board_size
-        self._players = {1: player_one, -1: player_two}
+        self._player_one = player_one
+        self._player_two = player_two
 
     @property
     def board(self) -> TicTacToeBoard:
@@ -25,25 +26,25 @@ class TicTacToe(Game):
 
     def reset(self) -> None:
         self._board = TicTacToeBoard(self._board_size)
+        self._players = {1: self._player_one, -1: self._player_two}
         self._round = 1
 
     def run(self) -> None:
         finished, result = self._board.evaluate()
 
         while not finished:
-            cur_player = self._board.player
-
+            print(self, end="\n")
             start_time = time.time()
-            action = self._players[cur_player].act(self._board)
+            action = self._players[self._board.player].act(self._board)
             end_time = time.time()
             new_board = self._board.move(action)
             finished, result = new_board.evaluate()
+            print(f"Selected action: {action} (runtime={(end_time - start_time):.3f}s)\n")
 
-            print(self, end="\n")
-            print(f"Selected action: {action} ({(end_time - start_time):.2f}s)\n")
             self._board = new_board
             self._round += 1
 
+        print(27 * "=")
         print(f"Game is finished! Winner: {self._board.player_to_string(result)}")
         print(self._board)
 
