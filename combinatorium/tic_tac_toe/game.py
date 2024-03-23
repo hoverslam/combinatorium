@@ -39,7 +39,7 @@ class TicTacToe(Game):
             end_time = time.time()
             new_board = self._board.move(action)
             finished, result = new_board.evaluate()
-            print(f"Selected action: {action} (runtime={(end_time - start_time):.3f}s)\n")
+            print(f"# Selected action: {action} (runtime={(end_time - start_time):.3f}s)\n")
 
             self._board = new_board
             self._round += 1
