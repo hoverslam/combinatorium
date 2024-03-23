@@ -1,7 +1,7 @@
 from combinatorium.connect_four.game import ConnectFour
-from combinatorium.connect_four.board import ConnectFourBoard
+from combinatorium.tic_tac_toe.game import TicTacToe
 
 __all__ = [
     "ConnectFour",
-    "ConnectFourBoard",
+    "TicTacToe",
 ]
