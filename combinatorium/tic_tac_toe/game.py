@@ -1,6 +1,8 @@
 from combinatorium.base import Game, Agent
 from combinatorium.tic_tac_toe.board import TicTacToeBoard
 
+import time
+
 
 class TicTacToe(Game):
     """Tic-Tac-Toe game implementation."""
@@ -31,11 +33,14 @@ class TicTacToe(Game):
         while not finished:
             cur_player = self._board.player
 
+            start_time = time.time()
             action = self._players[cur_player].act(self._board)
+            end_time = time.time()
             new_board = self._board.move(action)
             finished, result = new_board.evaluate()
 
-            print(self, end="\n\n")
+            print(self, end="\n")
+            print(f"Selected action: {action} ({(end_time - start_time):.2f}s)\n")
             self._board = new_board
             self._round += 1
 

@@ -6,13 +6,15 @@ class MinimaxAgent(Agent):
 
     This agent implements the Minimax algorithm to select the best action based on maximizing its
     own score and minimizing the opponent's score, considering a specified search depth.
+    See: https://en.wikipedia.org/wiki/Minimax
     """
 
-    def __init__(self, depth: int) -> None:
+    def __init__(self, depth: int = 5) -> None:
         """Initialize a new MinimaxAgent instance.
 
         Args:
             depth (int): The maximum depth of the search tree explored by the Minimax algorithm.
+                Defaults to 5.
         """
         super().__init__()
         self._depth = depth
