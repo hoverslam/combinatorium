@@ -23,7 +23,7 @@ class MinimaxAgent(Agent):
         """Choose the best action for the current board state using Minimax.
 
         Args:
-            board (Board): The current state of the Tic-Tac-Toe board.
+            board (Board): The current state of the game board.
 
         Returns:
             int: The action chosen by the agent.
