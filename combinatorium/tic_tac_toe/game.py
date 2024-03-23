@@ -30,7 +30,7 @@ class TicTacToe(Game):
         self._round = 1
 
     def run(self) -> None:
-        finished, result = self._board.evaluate()
+        finished, _ = self._board.evaluate()
 
         while not finished:
             print(self, end="\n")
@@ -38,15 +38,22 @@ class TicTacToe(Game):
             action = self._players[self._board.player].act(self._board)
             end_time = time.time()
             new_board = self._board.move(action)
-            finished, result = new_board.evaluate()
+            finished, _ = new_board.evaluate()      
             print(f"# Selected action: {action} (runtime={(end_time - start_time):.3f}s)\n")
 
             self._board = new_board
             self._round += 1
-
-        print(27 * "=")
-        print(f"Game is finished! Winner: {self._board.player_to_string(result)}")
-        print(self._board)
+        
+        self._show_final_results()        
+        
+    def _show_final_results(self) -> None:
+        """Print the game's outcome to the console.
+        """
+        finished, result = self._board.evaluate()
+        if finished:
+            print(f"{10 * "="} Game finished after {self._round - 1} rounds {10 * "="}")
+            print(f"Winner: {self._board.player_to_string(result)}")
+            print(self._board)        
 
     def __str__(self) -> str:
         player_symbol = self._board.player_to_string(self._board.player)
