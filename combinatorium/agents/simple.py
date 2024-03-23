@@ -1,5 +1,7 @@
 from combinatorium.base import Agent, Board
 
+import random
+
 
 class MinimaxAgent(Agent):
     """General purpose minimax agent.
@@ -29,12 +31,24 @@ class MinimaxAgent(Agent):
         Returns:
             int: The action chosen by the agent.
         """
-        maximizing_player = True if board.player == 1 else False
-        _, action = self._minimax(board, self._depth, maximizing_player)
+        # Store the values of the child notes to find the best action
+        values = {}
+        for action in board.possible_actions:
+            child = board.move(action)
+            values[action] = board.player * self._minimax(
+                board=child,
+                depth=self._depth - 1,
+                maximizing_player=not (True if board.player == 1 else False),
+            )
+
+        # Break ties randomly
+        max_values = max(values.values())
+        max_keys = [key for key, value in values.items() if value == max_values]
+        action = max_keys[0] if (len(max_keys) == 1) else random.choice(max_keys)
 
         return action
 
-    def _minimax(self, board: Board, depth, maximizing_player: int) -> tuple[float, int]:
+    def _minimax(self, board: Board, depth, maximizing_player: int) -> float:
         """Perform the Minimax recursive search to find the best action.
 
         Args:
@@ -44,33 +58,23 @@ class MinimaxAgent(Agent):
                 maximize (True) or minimize (False) the score.
 
         Returns:
-            tuple[float, int]: A tuple containing:
-                - float: The score for the best state found at the current depth.
-                - int: The action that leads to the best state.
+            float: The score for the best state found at the current depth.
         """
         if depth == 0 or board.evaluate()[0]:
-            return board.heuristic_value, -1  # Terminal state has no valid action
+            return board.heuristic_value
 
         if maximizing_player:
             value = float("-inf")
-            best_action = -1  # Initialize with invalid action
             for action in board.possible_actions:
                 child = board.move(action)
-                child_value, _ = self._minimax(child, depth - 1, False)
-                value = max(value, child_value)
-                if value == child_value:  # If child value is optimal, it has the optimal action.
-                    best_action = action
-            return value, best_action
+                value = max(value, self._minimax(child, depth - 1, False))
+            return value
         else:
             value = float("inf")
-            best_action = -1
             for action in board.possible_actions:
                 child = board.move(action)
-                child_value, _ = self._minimax(child, depth - 1, True)
-                value = min(value, child_value)
-                if value == child_value:
-                    best_action = action
-            return value, best_action
+                value = min(value, self._minimax(child, depth - 1, True))
+            return value
 
 
 class AlphaBetaAgent(Agent):
@@ -101,19 +105,28 @@ class AlphaBetaAgent(Agent):
         Returns:
             int: The action chosen by the agent.
         """
-        _, action = self._alpha_beta(
-            board=board,
-            depth=self._depth,
-            alpha=float("-inf"),
-            beta=float("inf"),
-            maximizing_player=(True if board.player == 1 else False),
-        )
+        # Store the values of the child notes to find the best action
+        values = {}
+        for action in board.possible_actions:
+            child = board.move(action)
+            values[action] = board.player * self._alpha_beta(
+                board=child,
+                depth=self._depth - 1,
+                alpha=float("-inf"),
+                beta=float("inf"),
+                maximizing_player=not (True if board.player == 1 else False),
+            )
+
+        # Break ties randomly
+        max_values = max(values.values())
+        max_keys = [key for key, value in values.items() if value == max_values]
+        action = max_keys[0] if (len(max_keys) == 1) else random.choice(max_keys)
 
         return action
 
     def _alpha_beta(
         self, board: Board, depth, alpha: float, beta: float, maximizing_player: int
-    ) -> tuple[float, int]:
+    ) -> float:
         """Perform the Minimax recursive search with alpha-beta pruning to find the best action.
 
         Args:
@@ -125,39 +138,29 @@ class AlphaBetaAgent(Agent):
                 maximize (True) or minimize (False) the score.
 
         Returns:
-            tuple[float, int]: A tuple containing:
-                - float: The score for the best state found at the current depth.
-                - int: The action that leads to the best state.
+            float: The score for the best state found at the current depth.
         """
         if depth == 0 or board.evaluate()[0]:
-            return board.heuristic_value, -1  # Terminal state has no valid action
+            return board.heuristic_value
 
         if maximizing_player:
             value = float("-inf")
-            best_action = -1  # Initialize with invalid action
             for action in board.possible_actions:
                 child = board.move(action)
-                child_value, _ = self._alpha_beta(child, depth - 1, alpha, beta, False)
-                value = max(value, child_value)
+                value = max(value, self._alpha_beta(child, depth - 1, alpha, beta, False))
                 alpha = max(alpha, value)
-                if value > beta:  # cutoff
+                if value > beta:  # beta cutoff
                     break
-                if value == child_value:  # If child value is optimal, it has the optimal action
-                    best_action = action
-            return value, best_action
+            return value
         else:
             value = float("inf")
-            best_action = -1
             for action in board.possible_actions:
                 child = board.move(action)
-                child_value, _ = self._alpha_beta(child, depth - 1, alpha, beta, True)
-                value = min(value, child_value)
+                value = min(value, self._alpha_beta(child, depth - 1, alpha, beta, True))
                 beta = min(beta, value)
-                if value < alpha:
+                if value < alpha:  # alpha cutoff
                     break
-                if value == child_value:
-                    best_action = action
-            return value, best_action
+            return value
 
 
 class NegamaxAgent(Agent):
@@ -168,15 +171,13 @@ class NegamaxAgent(Agent):
     See: https://en.wikipedia.org/wiki/Negamax
     """
 
-    def __init__(self, color: int, depth: int = 5) -> None:
+    def __init__(self, depth: int = 5) -> None:
         """Initialize a new negamax agent.
 
         Args:
-            color (int): The player's color (+1 = player 1 or -1: player 2).
             depth (int, optional): The maximum depth of the search tree explored. Defaults to 5.
         """
         super().__init__()
-        self._color = color
         self._depth = depth
 
     def act(self, board: Board) -> int:
@@ -188,11 +189,20 @@ class NegamaxAgent(Agent):
         Returns:
             int: The action chosen by the agent.
         """
-        _, action = self._negamax(board, self._depth, self._color)
+        # Store the values of the child notes to find the best action
+        values = {}
+        for action in board.possible_actions:
+            child = board.move(action)
+            values[action] = -self._negamax(child, self._depth - 1, -board.player)
+
+        # Break ties randomly
+        max_values = max(values.values())
+        max_keys = [key for key, value in values.items() if value == max_values]
+        action = max_keys[0] if (len(max_keys) == 1) else random.choice(max_keys)
 
         return action
 
-    def _negamax(self, board: Board, depth, color: int) -> tuple[float, int]:
+    def _negamax(self, board: Board, depth, color: int) -> float:
         """Performs a negamax search on the given board state.
 
         Args:
@@ -201,19 +211,13 @@ class NegamaxAgent(Agent):
             color (int): The player's color (+1 = player 1 or -1: player 2).
 
         Returns:
-            tuple[float, int]: A tuple containing:
-                - float: The score for the best state found at the current depth.
-                - int: The action that leads to the best state.
+            float: The score for the best state found at the current depth.
         """
         if depth == 0 or board.evaluate()[0]:
-            return color * board.heuristic_value, -1  # Terminal state has no valid action
+            return color * board.heuristic_value
 
         value = float("-inf")
-        best_action = -1  # Initialize with invalid action
         for action in board.possible_actions:
             child = board.move(action)
-            child_value = -1 * self._negamax(child, depth - 1, -color)[0]
-            value = max(value, child_value)
-            if value == child_value:  # If child value is optimal, it has the optimal action
-                best_action = action
-        return value, best_action
+            value = max(value, -self._negamax(child, depth - 1, -color))
+        return value
