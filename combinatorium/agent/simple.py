@@ -158,3 +158,62 @@ class AlphaBetaAgent(Agent):
                 if value == child_value:
                     best_action = action
             return value, best_action
+
+
+class NegamaxAgent(Agent):
+    """An agent that uses the negamax search algorithm to find the best action.
+
+    It is a variant form of minimax search that relies on the zero-sum property of a two-player game.
+
+    See: https://en.wikipedia.org/wiki/Negamax
+    """
+
+    def __init__(self, color: int, depth: int = 5) -> None:
+        """Initialize a new negamax agent.
+
+        Args:
+            color (int): The player's color (+1 = player 1 or -1: player 2).
+            depth (int, optional): The maximum depth of the search tree explored. Defaults to 5.
+        """
+        super().__init__()
+        self._color = color
+        self._depth = depth
+
+    def act(self, board: Board) -> int:
+        """Choose the best action for the current board.
+
+        Args:
+            board (Board): The current state of the game board.
+
+        Returns:
+            int: The action chosen by the agent.
+        """
+        _, action = self._negamax(board, self._depth, self._color)
+
+        return action
+
+    def _negamax(self, board: Board, depth, color: int) -> tuple[float, int]:
+        """Performs a negamax search on the given board state.
+
+        Args:
+            board (Board): The current board state.
+            depth (int): The current depth in the search tree.
+            color (int): The player's color (+1 = player 1 or -1: player 2).
+
+        Returns:
+            tuple[float, int]: A tuple containing:
+                - float: The score for the best state found at the current depth.
+                - int: The action that leads to the best state.
+        """
+        if depth == 0 or board.evaluate()[0]:
+            return color * board.heuristic_value, -1  # Terminal state has no valid action
+
+        value = float("-inf")
+        best_action = -1  # Initialize with invalid action
+        for action in board.possible_actions:
+            child = board.move(action)
+            child_value = -1 * self._negamax(child, depth - 1, -color)[0]
+            value = max(value, child_value)
+            if value == child_value:  # If child value is optimal, it has the optimal action
+                best_action = action
+        return value, best_action
