@@ -32,19 +32,19 @@ source .venv/bin/activate
 
 4. Install the dependencies:
 
-```ps
+```powershell
 pip install -r requirements.txt
 ```
 
 
 ## Usage
 
-```ps
+```powershell
 python -m main -g "ConnectFour" -p1 "Human" -p2 "Random"
 ```
 
 For possible options use ```--help``` :
-```ps
+```powershell
 python -m main --help
 ```
 ```
