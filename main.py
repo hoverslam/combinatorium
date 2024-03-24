@@ -7,6 +7,7 @@ from combinatorium.agents import (
     AlphaBetaAgent,
     NegamaxAgent,
     HumanAgent,
+    MCTSAgent,
 )
 
 
@@ -16,6 +17,7 @@ AGENTS = {
     "Minimax": MinimaxAgent(),
     "Negamax": NegamaxAgent(),
     "AlphaBeta": AlphaBetaAgent(),
+    "MCTS": MCTSAgent(),
 }
 
 GAMES = {
