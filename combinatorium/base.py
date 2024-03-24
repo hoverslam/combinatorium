@@ -115,12 +115,6 @@ class Agent(ABC):
     environment by selecting actions based on the current board state.
     """
 
-    def __str__(self) -> str:
-        class_name = type(self).__name__
-        match = re.search(r"(.*)Agent$", class_name)
-
-        return match.group(1) if match else class_name
-
     @abstractmethod
     def act(self, board: Board) -> int:
         """Choose an action to take on the given board.

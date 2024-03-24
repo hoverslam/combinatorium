@@ -33,3 +33,6 @@ class HumanAgent(Agent):
                 print(f"Input '{action}' is not a valid action!")
 
         return int(action)
+
+    def __str__(self) -> str:
+        return "Human"

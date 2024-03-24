@@ -31,7 +31,9 @@ class MinimaxAgent(Agent):
         Returns:
             int: The action chosen by the agent.
         """
-        # Store the values of the child notes to find the best action
+        # Since we want the best action for a given game state, we don't make an initial call to the
+        # root. Instead, we call all childs (i.e. possible actions) and figure out the optimal
+        # action from the values each child returns.
         values = {}
         for action in board.possible_actions:
             child = board.move(action)
@@ -76,6 +78,9 @@ class MinimaxAgent(Agent):
                 value = min(value, self._minimax(child, depth - 1, True))
             return value
 
+    def __str__(self) -> str:
+        return f"Minimax, depth={self._depth}"
+
 
 class AlphaBetaAgent(Agent):
     """An agent that uses the alpha-beta pruning algorithm to make decisions.
@@ -105,7 +110,9 @@ class AlphaBetaAgent(Agent):
         Returns:
             int: The action chosen by the agent.
         """
-        # Store the values of the child notes to find the best action
+        # Since we want the best action for a given game state, we don't make an initial call to the
+        # root. Instead, we call all childs (i.e. possible actions) and figure out the optimal
+        # action from the values each child returns.
         values = {}
         for action in board.possible_actions:
             child = board.move(action)
@@ -162,6 +169,9 @@ class AlphaBetaAgent(Agent):
                     break
             return value
 
+    def __str__(self) -> str:
+        return f"AlphaBeta, depth={self._depth}"
+
 
 class NegamaxAgent(Agent):
     """An agent that uses the negamax search algorithm to find the best action.
@@ -189,7 +199,9 @@ class NegamaxAgent(Agent):
         Returns:
             int: The action chosen by the agent.
         """
-        # Store the values of the child notes to find the best action
+        # Since we want the best action for a given game state, we don't make an initial call to the
+        # root. Instead, we call all childs (i.e. possible actions) and figure out the optimal
+        # action from the values each child returns.
         values = {}
         for action in board.possible_actions:
             child = board.move(action)
@@ -221,3 +233,6 @@ class NegamaxAgent(Agent):
             child = board.move(action)
             value = max(value, -self._negamax(child, depth - 1, -color))
         return value
+
+    def __str__(self) -> str:
+        return f"Negamax, depth={self._depth}"

@@ -24,3 +24,6 @@ class RandomAgent(Agent):
             int: A randomly chosen action from the list of possible actions.
         """
         return random.choice(board.possible_actions)
+
+    def __str__(self) -> str:
+        return "Random"
