@@ -29,8 +29,36 @@ class ConnectFourBoard(Board):
 
     @property
     def heuristic_value(self) -> float:
-        # TODO: find better heuristic value
-        return float(self.evaluate()[1])
+        """Return the heuristic value of the current board state.
+
+        The heuristic function weights the coins based on their position on the board. It is
+        simple but fast to compute.
+        Found in this paper: Kang, Wang, Hu (2019) Research on Different Heuristics for Minimax
+        Algorithm Insight from Connect-4 Game.
+
+        Return:
+            float: The heuristic value of the board state.
+        """
+        # If it is a terminal state, return the result
+        finished, result = self.evaluate()
+        if finished:
+            return result
+
+        # Otherwise use heuristic function
+        weights = np.array(
+            [
+                [3, 4, 5, 7, 5, 4, 3],
+                [4, 6, 8, 10, 8, 6, 4],
+                [5, 8, 11, 13, 11, 8, 5],
+                [5, 8, 11, 13, 11, 8, 5],
+                [4, 6, 8, 10, 8, 6, 4],
+                [3, 4, 5, 7, 5, 4, 3],
+            ]
+        )
+        weighted_sum = np.sum(self._state * weights)
+        normalized_weighted_sum = weighted_sum / np.sum(weights)
+
+        return normalized_weighted_sum.item()
 
     def move(self, action: int) -> ConnectFourBoard:
         # Check if the given action is valid
