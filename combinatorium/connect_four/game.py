@@ -42,16 +42,21 @@ class ConnectFour(Game):
             self._board = new_board
             self._round += 1
         
-        self._show_final_results()        
+        self._show_final_result()        
         
-    def _show_final_results(self) -> None:
+    def _show_final_result(self) -> None:
         """Print the game's outcome to the console.
         """
         finished, result = self._board.evaluate()
         if finished:
             print(f"{10 * "="} Game finished after {self._round - 1} rounds {10 * "="}")
-            print(f"Winner: {self._board.player_to_string(result)}")
-            print(self._board)        
+            print(self._board)  
+            if result == 0:
+                print("Result: Draw")
+            else:
+                player_symbol = self._board.player_to_string(result)
+                player_type = str(self._players[result])
+                print(f"Result: {player_symbol} ({player_type})")   
 
     def __str__(self) -> str:
         player_symbol = self._board.player_to_string(self._board.player)
