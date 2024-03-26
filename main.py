@@ -30,6 +30,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    game = load_game(args.g, args.p1, args.p2, "./combinatorium/config/agents.yaml")
+    game = load_game(args.g, args.p1, args.p2, "./combinatorium/configs/agents.yaml")
     game.reset()
     game.run()
