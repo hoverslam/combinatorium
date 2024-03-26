@@ -1,0 +1,26 @@
+###
+# This config file defines the settings for each agent in each game.
+###
+
+# Tic-tac-toe =========================
+TicTacToe:
+  Minimax:
+    depth: 9
+  Negamax:
+    depth: 9
+  AlphaBeta:
+    depth: 9
+  MCTS:
+    search_time: 30
+
+# Connect Four ========================
+ConnectFour:
+  Minimax:
+    depth: 5
+  Negamax:
+    depth: 5
+  AlphaBeta:
+    depth: 7
+  MCTS:
+    search_time: 60
+

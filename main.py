@@ -1,29 +1,6 @@
 import argparse
 
-from combinatorium import ConnectFour, TicTacToe
-from combinatorium.agents import (
-    RandomAgent,
-    MinimaxAgent,
-    AlphaBetaAgent,
-    NegamaxAgent,
-    HumanAgent,
-    MCTSAgent,
-)
-
-
-AGENTS = {
-    "Human": HumanAgent(),
-    "Random": RandomAgent(),
-    "Minimax": MinimaxAgent(),
-    "Negamax": NegamaxAgent(),
-    "AlphaBeta": AlphaBetaAgent(),
-    "MCTS": MCTSAgent(),
-}
-
-GAMES = {
-    "TicTacToe": TicTacToe,
-    "ConnectFour": ConnectFour,
-}
+from combinatorium.utils import GAMES, AGENTS, load_game
 
 
 if __name__ == "__main__":
@@ -53,6 +30,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    game = GAMES[args.g](AGENTS[args.p1], AGENTS[args.p2])
+    game = load_game(args.g, args.p1, args.p2, "./combinatorium/config/agents.yaml")
     game.reset()
     game.run()
