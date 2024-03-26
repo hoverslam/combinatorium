@@ -1,5 +1,6 @@
 from combinatorium.base import Agent, Board
 
+import time
 import random
 
 
@@ -23,7 +24,12 @@ class RandomAgent(Agent):
         Return:
             int: A randomly chosen action from the list of possible actions.
         """
-        return random.choice(board.possible_actions)
+        start_runtime = time.time()
+        action = random.choice(board.possible_actions)
+        runtime = time.time() - start_runtime
+        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+
+        return action
 
     def __str__(self) -> str:
         return "Random"

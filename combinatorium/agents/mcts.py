@@ -15,10 +15,11 @@ class MCTSAgent(Agent):
 
     def act(self, board: Board) -> int:
         root = MCTSNode(board, None)
-        end_time = time.time() + self._search_time
+        start_runtime = time.time()
+        end_search_time = time.time() + self._search_time
 
         # MCTS loop
-        while time.time() < end_time:
+        while time.time() < end_search_time:
             current = root
             nodes = [current]
 
@@ -37,8 +38,13 @@ class MCTSAgent(Agent):
         # Select optimal action
         win_rates = np.array([child.win_rate for child in root._children])
         highest_idx = np.random.choice(np.flatnonzero(win_rates == np.min(win_rates)))
+        action = root._actions[highest_idx]
 
-        return root._actions[highest_idx]
+        runtime = time.time() - start_runtime
+        win_rate = 1 - np.min(win_rates)
+        print(f"# Selected action: {action} ({runtime=:.3f}s, {win_rate=:.4f})\n")
+
+        return action
 
     def _selection(self, nodes: list[MCTSNode]) -> None:
         current = nodes[-1]
