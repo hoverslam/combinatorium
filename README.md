@@ -101,6 +101,6 @@ Reference: [Wikipedia | Negamax](https://en.wikipedia.org/wiki/Negamax)
 
 ### Monte Carlo tree search (MCTS)
 
-MCTS is a game-playing AI technique. Unlike minimax, which explores all options, MCTS builds a tree and simulates random games from each branch to find promising moves. It balances exploring new strategies with exploiting what works.
+MCTS is another tree search technique. Unlike minimax, which explores all options, MCTS builds a tree and simulates random games from each branch to find promising moves. It balances exploring new strategies with exploiting what works.
 
 Reference: [Wikipedia | Monte Carlo tree search](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search)
