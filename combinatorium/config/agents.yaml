@@ -11,7 +11,7 @@ TicTacToe:
   AlphaBeta:
     depth: 9
   MCTS:
-    search_time: 30
+    search_time: 5
 
 # Connect Four ========================
 ConnectFour:
@@ -22,5 +22,5 @@ ConnectFour:
   AlphaBeta:
     depth: 7
   MCTS:
-    search_time: 60
+    search_time: 15
 

@@ -27,31 +27,25 @@ class MCTSAgent(Agent):
         self._search_time = search_time
 
     def act(self, board: Board) -> int:
-        root = MCTSNode(board, None)
         start_runtime = time.time()
-        end_search_time = time.time() + self._search_time
 
-        # MCTS loop
-        while time.time() < end_search_time:
-            current = root
-            nodes = [current]
+        if len(board.possible_actions) == 1:
+            action = board.possible_actions[0]
+        else:
+            root = MCTSNode(board, None)
+            end_search_time = time.time() + self._search_time
 
-            # Selection
-            self._selection(nodes)
+            # MCTS loop
+            while time.time() < end_search_time:
+                current = root
+                nodes = [current]
 
-            # Expansion
-            self._expansion(nodes)
+                self._selection(nodes)
+                self._expansion(nodes)
+                result = self._rollout(nodes)
+                self._backpropagation(nodes, result)
 
-            # Rollout
-            result = self._rollout(nodes)
-
-            # Backpropagation
-            self._backpropagation(nodes, result)
-
-        # Select optimal action
-        win_rates = np.array([child.win_rate for child in root._children])
-        highest_idx = np.random.choice(np.flatnonzero(win_rates == np.min(win_rates)))
-        action = root._actions[highest_idx]
+            action = self._find_best_action(root)
 
         runtime = time.time() - start_runtime
         print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
@@ -66,9 +60,9 @@ class MCTSAgent(Agent):
         """
         current = nodes[-1]
         while not current.is_leaf():
-            uct_scores = np.array([child.uct_score for child in current._children])
-            highest_idx = np.random.choice(np.flatnonzero(uct_scores == np.max(uct_scores)))
-            current = current._children[highest_idx]
+            scores = np.array([child.score for child in current._children])
+            best_idx = np.random.choice(np.flatnonzero(scores == np.max(scores)))
+            current = current._children[best_idx]
             nodes.append(current)
 
     def _expansion(self, nodes: list[MCTSNode]) -> None:
@@ -114,6 +108,13 @@ class MCTSAgent(Agent):
         for node in reversed(nodes):
             node.update(result)
 
+    def _find_best_action(self, root: MCTSNode) -> int:
+        visits = np.array([child._visits for child in root._children])
+        best_idx = np.random.choice(np.flatnonzero(visits == np.max(visits)))
+        action = root._actions[best_idx]
+
+        return action
+
     def __str__(self) -> str:
         return f"MCTS, search_time={self._search_time}s"
 
@@ -137,7 +138,7 @@ class MCTSNode:
         self._actions = []
 
     @property
-    def uct_score(self) -> float:
+    def score(self) -> float:
         """Calculate the 'Upper Confidence Bound 1 applied to trees' (UCT) score of this node.
 
         Returns:
@@ -181,8 +182,10 @@ class MCTSNode:
         Args:
             result (int): The outcome of the simulated playout (1 = player 1, -1 = player 2 or 0 = draw).
         """
+        # Since the action that leads to this node is performed by the other player, the result must
+        # also be seen from the perspective of the other player.
         self._visits += 1
-        self._wins += 0.5 if (result == 0) else int(self._board.player == result)
+        self._wins += 0.5 if (result == 0) else int(self._board.player != result)
 
     def expand(self) -> None:
         """Expand this node by adding child nodes for each possible action from the current state."""
