@@ -1,4 +1,5 @@
-from combinatorium.base import Agent, Board
+from combinatorium.games import Board
+from combinatorium.agents import Agent
 
 import time
 

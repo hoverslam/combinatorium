@@ -1,5 +1,6 @@
 from __future__ import annotations
-from combinatorium.base import Agent, Board
+from combinatorium.games import Board
+from combinatorium.agents import Agent
 
 import time
 import math

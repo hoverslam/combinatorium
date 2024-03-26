@@ -1,5 +1,5 @@
 from __future__ import annotations
-from combinatorium.base import Board
+from combinatorium.games.base import Board
 
 import numpy as np
 
@@ -37,7 +37,9 @@ class TicTacToeBoard(Board):
     def move(self, action: int) -> TicTacToeBoard:
         # Check if the given action is valid
         if action not in self.possible_actions:
-            raise ValueError(f"'{action}' is not a valid action. Possible actions: {self.possible_actions}.")
+            raise ValueError(
+                f"'{action}' is not a valid action. Possible actions: {self.possible_actions}."
+            )
 
         # Create a new state updated by the given action
         new_state = self._state.copy()

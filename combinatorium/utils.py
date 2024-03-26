@@ -1,6 +1,6 @@
-from combinatorium.base import Agent, Game
-from combinatorium import ConnectFour, TicTacToe
+from combinatorium.games import Game, ConnectFour, TicTacToe
 from combinatorium.agents import (
+    Agent,
     RandomAgent,
     MinimaxAgent,
     AlphaBetaAgent,

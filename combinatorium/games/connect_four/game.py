@@ -1,5 +1,6 @@
-from combinatorium.base import Game, Agent
-from combinatorium.connect_four.board import ConnectFourBoard
+from combinatorium.games import Game
+from combinatorium.agents import Agent
+from combinatorium.games.connect_four.board import ConnectFourBoard
 
 
 class ConnectFour(Game):

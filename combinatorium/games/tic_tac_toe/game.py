@@ -1,5 +1,6 @@
-from combinatorium.base import Game, Agent
-from combinatorium.tic_tac_toe.board import TicTacToeBoard
+from combinatorium.games import Game
+from combinatorium.agents import Agent
+from combinatorium.games.tic_tac_toe.board import TicTacToeBoard
 
 
 class TicTacToe(Game):

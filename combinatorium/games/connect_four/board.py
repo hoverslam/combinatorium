@@ -1,5 +1,5 @@
 from __future__ import annotations
-from combinatorium.base import Board
+from combinatorium.games import Board
 
 import numpy as np
 from scipy.signal import convolve
