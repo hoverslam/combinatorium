@@ -1,5 +1,7 @@
 from combinatorium.base import Agent, Board
 
+import time
+
 
 class HumanAgent(Agent):
     """An agent that represents a human player in the game.
@@ -20,6 +22,8 @@ class HumanAgent(Agent):
         Returns:
             int: The integer value representing the chosen action by the human player.
         """
+        start_runtime = time.time()
+
         action = -1
         while action not in board.possible_actions:
             try:
@@ -32,7 +36,10 @@ class HumanAgent(Agent):
             if action not in board.possible_actions:
                 print(f"Input '{action}' is not a valid action!")
 
-        return int(action)
+        runtime = time.time() - start_runtime
+        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+
+        return action
 
     def __str__(self) -> str:
         return "Human"

@@ -1,5 +1,6 @@
 from combinatorium.base import Agent, Board
 
+import time
 import random
 
 
@@ -31,6 +32,8 @@ class MinimaxAgent(Agent):
         Returns:
             int: The action chosen by the agent.
         """
+        start_runtime = time.time()
+
         # Since we want the best action for a given game state, we don't make an initial call to the
         # root. Instead, we call all childs (i.e. possible actions) and figure out the optimal
         # action from the values each child returns.
@@ -47,6 +50,9 @@ class MinimaxAgent(Agent):
         max_values = max(values.values())
         max_keys = [key for key, value in values.items() if value == max_values]
         action = max_keys[0] if (len(max_keys) == 1) else random.choice(max_keys)
+
+        runtime = time.time() - start_runtime
+        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 
@@ -110,6 +116,8 @@ class AlphaBetaAgent(Agent):
         Returns:
             int: The action chosen by the agent.
         """
+        start_runtime = time.time()
+
         # Since we want the best action for a given game state, we don't make an initial call to the
         # root. Instead, we call all childs (i.e. possible actions) and figure out the optimal
         # action from the values each child returns.
@@ -128,6 +136,9 @@ class AlphaBetaAgent(Agent):
         max_values = max(values.values())
         max_keys = [key for key, value in values.items() if value == max_values]
         action = max_keys[0] if (len(max_keys) == 1) else random.choice(max_keys)
+
+        runtime = time.time() - start_runtime
+        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 
@@ -199,6 +210,8 @@ class NegamaxAgent(Agent):
         Returns:
             int: The action chosen by the agent.
         """
+        start_runtime = time.time()
+
         # Since we want the best action for a given game state, we don't make an initial call to the
         # root. Instead, we call all childs (i.e. possible actions) and figure out the optimal
         # action from the values each child returns.
@@ -211,6 +224,9 @@ class NegamaxAgent(Agent):
         max_values = max(values.values())
         max_keys = [key for key, value in values.items() if value == max_values]
         action = max_keys[0] if (len(max_keys) == 1) else random.choice(max_keys)
+
+        runtime = time.time() - start_runtime
+        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 

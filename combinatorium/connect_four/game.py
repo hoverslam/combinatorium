@@ -1,8 +1,6 @@
 from combinatorium.base import Game, Agent
 from combinatorium.connect_four.board import ConnectFourBoard
 
-import time
-
 
 class ConnectFour(Game):
     """This class represents a Connect Four game between two players."""
@@ -32,12 +30,9 @@ class ConnectFour(Game):
 
         while not finished:
             print(self, end="\n")
-            start_time = time.time()
             action = self._players[self._board.player].act(self._board)
-            end_time = time.time()
             new_board = self._board.move(action)
-            finished, _ = new_board.evaluate()      
-            print(f"# Selected action: {action} (runtime={(end_time - start_time):.3f}s)\n")
+            finished, _ = new_board.evaluate()
 
             self._board = new_board
             self._round += 1
