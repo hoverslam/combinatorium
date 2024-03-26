@@ -8,8 +8,21 @@ import numpy as np
 
 
 class MCTSAgent(Agent):
+    """An agent that uses Monte Carlo tree search (MCTS) to make decisions in games.
+
+    This agent implements the MCTS algorithm to select the best action based on simulating random
+    games while balancing exploration and exploitation of different strategies.
+
+    See: https://en.wikipedia.org/wiki/Monte_Carlo_tree_search
+    """
 
     def __init__(self, search_time: int = 60) -> None:
+        """Initialize a MCTS agent.
+
+        Args:
+            search_time (int, optional): The amount of time in seconds to spend searching for the
+                best move. Defaults to 60.
+        """
         super().__init__()
         self._search_time = search_time
 
@@ -41,12 +54,16 @@ class MCTSAgent(Agent):
         action = root._actions[highest_idx]
 
         runtime = time.time() - start_runtime
-        win_rate = 1 - np.min(win_rates)
-        print(f"# Selected action: {action} ({runtime=:.3f}s, {win_rate=:.4f})\n")
+        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 
     def _selection(self, nodes: list[MCTSNode]) -> None:
+        """Select the most promising node in the tree using the UCT score.
+
+        Args:
+            nodes (list[MCTSNode]): A list of nodes representing the current search path.
+        """
         current = nodes[-1]
         while not current.is_leaf():
             uct_scores = np.array([child.uct_score for child in current._children])
@@ -55,6 +72,11 @@ class MCTSAgent(Agent):
             nodes.append(current)
 
     def _expansion(self, nodes: list[MCTSNode]) -> None:
+        """Expand the tree by adding a new child node for each possible action from the current state.
+
+        Args:
+            nodes (list[MCTSNode]): A list of nodes representing the current search path.
+        """
         current = nodes[-1]
         board = current._board
         finished, _ = board.evaluate()
@@ -64,6 +86,14 @@ class MCTSAgent(Agent):
             nodes.append(current)
 
     def _rollout(self, nodes: list[MCTSNode]) -> int:
+        """Simulate a random playout from the current state to estimate the win rate.
+
+        Args:
+            nodes (list[MCTSNode]): A list of nodes representing the current search path.
+
+        Returns:
+            int: The outcome of the simulated playout (1 = player 1, -1 = player 2 or 0 = draw).
+        """
         current = nodes[-1]
         board = current._board
         finished, result = board.evaluate()
@@ -75,6 +105,12 @@ class MCTSAgent(Agent):
         return result
 
     def _backpropagation(self, nodes: list[MCTSNode], result: int) -> None:
+        """Update the win and visit counts of all nodes in the search path based on the simulation result.
+
+        Args:
+            nodes (list[MCTSNode]): A list of nodes representing the current search path.
+            result (int): The outcome of the simulated playout (1 = player 1, -1 = player 2 or 0 = draw).
+        """
         for node in reversed(nodes):
             node.update(result)
 
@@ -83,8 +119,15 @@ class MCTSAgent(Agent):
 
 
 class MCTSNode:
+    """A class representing a node in the MCTS tree."""
 
     def __init__(self, board: Board, parent: MCTSNode | None) -> None:
+        """Initialize a node in the MCTS tree.
+
+        Args:
+            board (Board): The game board state represented by this node.
+            parent (MCTSNode | None): The parent node of this node in the tree.
+        """
         self._board = board
         self._parent = parent
         self._wins = 0.0
@@ -95,13 +138,17 @@ class MCTSNode:
 
     @property
     def uct_score(self) -> float:
+        """Calculate the 'Upper Confidence Bound 1 applied to trees' (UCT) score of this node.
+
+        Returns:
+            float: The UCT score used for node selection in MCTS.
+        """
         if self._parent is None:
             return 0.0
 
         if self._visits == 0:
             return float("inf")
 
-        # Upper Confidence Bound 1 applied to trees
         score = self._wins / self._visits + self._c * math.sqrt(
             math.log(self._parent._visits) / self._visits
         )
@@ -110,19 +157,35 @@ class MCTSNode:
 
     @property
     def win_rate(self) -> float:
+        """Calculate the win rate of this node, which is the number of wins divided by the number of visits.
+
+        Returns:
+            float: The win rate of this node.
+        """
         if self._visits == 0:
             return 0.0
         else:
             return self._wins / self._visits
 
     def is_leaf(self) -> bool:
+        """Check if this node is a leaf node (i.e. has no children).
+
+        Returns:
+            bool: True if the node is a leaf, False otherwise.
+        """
         return True if (len(self._children) == 0) else False
 
     def update(self, result: int) -> None:
+        """Update the win and visit counts of this node based on the simulation result.
+
+        Args:
+            result (int): The outcome of the simulated playout (1 = player 1, -1 = player 2 or 0 = draw).
+        """
         self._visits += 1
         self._wins += 0.5 if (result == 0) else int(self._board.player == result)
 
     def expand(self) -> None:
+        """Expand this node by adding child nodes for each possible action from the current state."""
         for action in self._board.possible_actions:
             new_board = self._board.move(action)
             child = MCTSNode(new_board, self)
