@@ -122,6 +122,7 @@ class ConnectFourBoard(Board):
         for row in self._state:
             string += "\n" + "| " + " | ".join(self.player_to_string(x) for x in row) + " |" + "\n"
             string += 36 * "-"
+        string += "\n" + "  " + "   ".join(f"C{str(i)}" for i in range(self._size[1])) + "\n"
 
         return string
 
@@ -145,7 +146,7 @@ class ConnectFourBoard(Board):
             action (int): The action representing a column on the board.
 
         Returns:
-            str: The column corresponding to the action (1-based indexing).
+            str: The column corresponding to the action (0-based indexing).
         """
 
-        return f"Column {action+1}"
+        return f"C{action}"
