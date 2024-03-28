@@ -69,13 +69,13 @@ A table for complexities of some well-known games can be found [here](https://en
 
 ### Tic-tac-toe
 
-Tic-tac-toe is a classic two-player game played on a 3x3 grid. Players take turns marking spaces with an ***X*** or ***O***. The first player to get three of their marks in a row (horizontally, vertically, or diagonally) wins. This game is a great introduction to basic game mechanics and strategic thinking. The state space complexity is rather small with only 5 478 different states (after removing illegal positions). Reference: [Wikipedia | Tic-tac-toe](https://en.wikipedia.org/wiki/Tic-tac-toe)
+[Tic-tac-toe](https://en.wikipedia.org/wiki/Tic-tac-toe) is a classic two-player game played on a 3x3 grid. Players take turns marking spaces with an ***X*** or ***O***. The first player to get three of their marks in a row (horizontally, vertically, or diagonally) wins. This game is a great introduction to basic game mechanics and strategic thinking. The state space complexity is rather small with only 5 478 different states (after removing illegal positions).
 
 <img src="./img/tic_tac_toe.png" alt="Final results of a Tic-tac-toe game" style="width:300px; height:auto;">
 
 ### Connect Four
 
-Connect Four is another two-player game played on a 7x6 grid. Players take turns dropping colored discs into one of the seven columns. The discs fall down the column and land on the first available space. The goal is to be the first player to connect four of your discs horizontally, vertically, or diagonally. Reference: [Wikipedia | Connect Four](https://en.wikipedia.org/wiki/Connect_Four)
+[Connect Four](https://en.wikipedia.org/wiki/Connect_Four) is another two-player game played on a 7x6 grid. Players take turns dropping colored discs into one of the seven columns. The discs fall down the column and land on the first available space. The goal is to be the first player to connect four of your discs horizontally, vertically, or diagonally.
 
 <img src="./img/connect_four.png" alt="Final results of a Connect Four game" style="width:300px; height:auto;">
 
