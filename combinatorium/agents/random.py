@@ -1,11 +1,10 @@
-from combinatorium.games import Board
-from combinatorium.agents import Agent
+from combinatorium.interfaces import Board
 
 import time
 import random
 
 
-class RandomAgent(Agent):
+class RandomAgent:
     """An agent that selects actions randomly from the available options.
 
     This agent implements a simple strategy of choosing a random valid action from the list
