@@ -1,11 +1,10 @@
 from __future__ import annotations
-from combinatorium.games import Board
 
 import numpy as np
 from scipy.signal import convolve
 
 
-class ConnectFourBoard(Board):
+class ConnectFourBoard:
     """Represents a Connect Four game board."""
 
     def __init__(self) -> None:
