@@ -1,4 +1,4 @@
-from combinatorium.interfaces.board import Board
+from __future__ import annotations
 
 from typing import Protocol
 

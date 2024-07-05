@@ -1,4 +1,4 @@
-from combinatorium.games.base import Board
+from combinatorium.interfaces import Board
 
 from typing import Protocol
 
