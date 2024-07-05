@@ -1,9 +1,8 @@
-from combinatorium.games import Game
-from combinatorium.agents import Agent
+from combinatorium.interfaces import Agent, Board
 from combinatorium.games.connect_four.board import ConnectFourBoard
 
 
-class ConnectFour(Game):
+class ConnectFour:
     """This class represents a Connect Four game between two players."""
 
     def __init__(self, player_one: Agent, player_two: Agent) -> None:
@@ -18,7 +17,7 @@ class ConnectFour(Game):
         self._player_two = player_two
 
     @property
-    def board(self) -> ConnectFourBoard:
+    def board(self) -> Board:
         return self._board
 
     def reset(self) -> None:

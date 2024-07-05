@@ -1,11 +1,10 @@
-from combinatorium.games import Board
-from combinatorium.agents import Agent
+from combinatorium.interfaces import Board
 
 import time
 import random
 
 
-class MinimaxAgent(Agent):
+class MinimaxAgent:
     """General purpose minimax agent.
 
     This agent implements the Minimax algorithm to select the best action based on maximizing its
@@ -89,7 +88,7 @@ class MinimaxAgent(Agent):
         return f"Minimax, depth={self._depth}"
 
 
-class AlphaBetaAgent(Agent):
+class AlphaBetaAgent:
     """An agent that uses the alpha-beta pruning algorithm to make decisions.
 
     Alpha-beta pruning is a search algorithm optimization technique used in minimax decision trees. It
@@ -185,7 +184,7 @@ class AlphaBetaAgent(Agent):
         return f"AlphaBeta, depth={self._depth}"
 
 
-class NegamaxAgent(Agent):
+class NegamaxAgent:
     """An agent that uses the negamax search algorithm to find the best action.
 
     It is a variant form of minimax search that relies on the zero-sum property of a two-player game.

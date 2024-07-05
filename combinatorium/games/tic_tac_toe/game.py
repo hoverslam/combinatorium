@@ -1,9 +1,8 @@
-from combinatorium.games import Game
-from combinatorium.agents import Agent
+from combinatorium.interfaces import Agent, Board
 from combinatorium.games.tic_tac_toe.board import TicTacToeBoard
 
 
-class TicTacToe(Game):
+class TicTacToe:
     """Tic-tac-toe game implementation."""
 
     def __init__(self, player_one: Agent, player_two: Agent, board_size: int = 3) -> None:
@@ -20,7 +19,7 @@ class TicTacToe(Game):
         self._player_two = player_two
 
     @property
-    def board(self) -> TicTacToeBoard:
+    def board(self) -> Board:
         return self._board
 
     def reset(self) -> None:

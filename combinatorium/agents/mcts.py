@@ -1,6 +1,6 @@
 from __future__ import annotations
-from combinatorium.games import Board
-from combinatorium.agents import Agent
+
+from combinatorium.interfaces import Board
 
 import time
 import math
@@ -8,7 +8,7 @@ import random
 import numpy as np
 
 
-class MCTSAgent(Agent):
+class MCTSAgent:
     """An agent that uses Monte Carlo tree search (MCTS) to make decisions in games.
 
     This agent implements the MCTS algorithm to select the best action based on simulating random

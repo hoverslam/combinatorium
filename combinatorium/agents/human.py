@@ -1,10 +1,9 @@
-from combinatorium.games import Board
-from combinatorium.agents import Agent
+from combinatorium.interfaces import Board
 
 import time
 
 
-class HumanAgent(Agent):
+class HumanAgent:
     """An agent that represents a human player in the game.
 
     It prompts the user for an action to take and checks for the validity of the input.

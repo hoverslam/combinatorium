@@ -1,10 +1,9 @@
 from __future__ import annotations
-from combinatorium.games.base import Board
 
 import numpy as np
 
 
-class TicTacToeBoard(Board):
+class TicTacToeBoard:
     """Tic-Tac-Toe board representation."""
 
     def __init__(self, size: int) -> None:
