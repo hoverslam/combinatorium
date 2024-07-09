@@ -39,24 +39,18 @@ class AlphaZeroNode:
     @property
     def visits(self) -> torch.Tensor:
         if self.is_leaf():
-            raise ValueError(
-                "This unexpanded node has no visit statistics because it has no child nodes."
-            )
+            raise ValueError("This unexpanded node has no visit statistics because it has no child nodes.")
 
         return self._visits
 
     def compute_scores(self, exploration_rate: float) -> torch.Tensor:
         if self.is_leaf():
-            raise ValueError(
-                "This unexpanded node cannot compute scores because it has no child nodes."
-            )
+            raise ValueError("This unexpanded node cannot compute scores because it has no child nodes.")
 
         # The PUCT algorithm from the paper with a small amount added to the total visit count. This has the effect that
         # with 0 visits the score equals the prior probabilities
         puct_scores = (
-            exploration_rate
-            * self._prior_probs
-            * ((torch.sqrt(self._visits.sum()) + 1e-10) / (1 + self._visits))
+            exploration_rate * self._prior_probs * ((torch.sqrt(self._visits.sum()) + 1e-10) / (1 + self._visits))
         )
 
         return self._mean_action_values + puct_scores
@@ -64,13 +58,9 @@ class AlphaZeroNode:
     def is_leaf(self) -> bool:
         return len(self._children) == 0
 
-    def expand(
-        self, model: nn.Module, board_encoding_fn: Callable[[Board], torch.Tensor]
-    ) -> tuple[float, int]:
+    def expand(self, model: nn.Module, board_encoding_fn: Callable[[Board], torch.Tensor]) -> tuple[float, int]:
         legal_actions = self._board.possible_actions
-        self._children = {
-            action: AlphaZeroNode(self._board.move(action), self) for action in legal_actions
-        }
+        self._children = {action: AlphaZeroNode(self._board.move(action), self) for action in legal_actions}
 
         # Evaluate node
         model.eval()
@@ -106,11 +96,7 @@ class AlphaZeroNode:
 
     def __str__(self) -> str:
         if self.is_leaf():
-            string = (
-                f"Player: {self._board.player}\n"
-                f"{self._board}\n"
-                f"Unexpanded node with no children."
-            )
+            string = f"Player: {self._board.player}\n" f"{self._board}\n" f"Unexpanded node with no children."
         else:
             string = (
                 f"Player: {self._board.player}\n"
@@ -136,7 +122,6 @@ class AlphaZeroMCTS:
         self._model = model
         self._board_encoding_fn = board_encoding_fn
         self._num_actions = num_actions
-
         self._root = AlphaZeroNode(board, parent=None)
 
     def run(
@@ -159,17 +144,17 @@ class AlphaZeroMCTS:
             current_node = self._root
             search_path = []  # [(node, action), ...]
 
-            # 1. Select
+            # 1. Select node with the highest score until leaf nod is reached
             while not current_node.is_leaf():
                 scores = current_node.compute_scores(exploration_rate)
                 action = int(scores.argmax().item())
                 search_path.append((current_node, action))
                 current_node = current_node.children[action]
 
-            # 2. Expand and evaluate
+            # 2. Expand and evaluate leaf node
             value, to_play = current_node.expand(self._model, self._board_encoding_fn)
 
-            # 3. Backpropagate
+            # 3. Backpropagate value of the leaf node along the search path
             for node, action in search_path:
                 node.update(value, action, to_play)
 
@@ -188,9 +173,7 @@ class AlphaZeroMCTS:
             search_probs = torch.zeros_like(root.visits, dtype=torch.float)
             search_probs[torch.argmax(root.visits)] = 1
         else:
-            search_probs = torch.pow(root.visits, 1 / temperature) / torch.pow(
-                root.visits.sum(), 1 / temperature
-            )
+            search_probs = torch.pow(root.visits, 1 / temperature) / torch.pow(root.visits.sum(), 1 / temperature)
             search_probs = search_probs / search_probs.sum()
 
         # "Add" back invalid actions with probability of zero and renormalize to match neural network output
@@ -285,31 +268,38 @@ class AlphaZero(ABC):
     ) -> None:
         for _ in range(num_games):
             board = TicTacToeBoard(3)
-            mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
             finished, result = board.evaluate()
             history = []  # (state, search_probs, current_player)
 
-            while not finished:
+            while True:
+                # Run a MCTS from the current board.
+                mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
                 search_probs = mcts.run(
                     self._num_simulations,
                     self._exploration_rate,
                     temperature,
                     noise,
                 )
-                action = int(torch.multinomial(search_probs, 1).item())
-                new_board = board.move(action)
-                finished, result = new_board.evaluate()
 
+                # Add the state, search probabilities, and current player to the history.
                 state = self._encode_board(board)
                 history.append((state, search_probs, board.player))
-                board = new_board
-                mcts = mcts.select_subtree(action)
+
+                # Make a move based on the search probabilities from the MCTS.
+                action = int(torch.multinomial(search_probs, 1).item())
+                board = board.move(action)
+                finished, result = board.evaluate()
+
+                if finished:
+                    # Since we don't need search probabilities after the finally state we can append it with fake ones.
+                    state = self._encode_board(board)
+                    search_probs = torch.full((self._num_actions,), 1 / self._num_actions, dtype=torch.float)
+                    history.append((state, search_probs, board.player))
+                    break
 
             replay_buffer.add(history, result)
 
-    def _retrain_model(
-        self, replay_buffer: AlphaZeroReplayBuffer, optimizer
-    ) -> tuple[float, float]:
+    def _retrain_model(self, replay_buffer: AlphaZeroReplayBuffer, optimizer) -> tuple[float, float]:
         total_value_loss = 0.0
         total_policy_loss = 0.0
 
