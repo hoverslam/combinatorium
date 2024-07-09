@@ -27,7 +27,10 @@ class TicTacToeBoard:
 
     @property
     def possible_actions(self) -> list[int]:
-        return np.where(self._state.ravel() == 0)[0].tolist()
+        if self.evaluate()[0]:
+            return []
+        else:
+            return np.where(self._state.ravel() == 0)[0].tolist()
 
     @property
     def heuristic_value(self) -> float:
@@ -36,9 +39,7 @@ class TicTacToeBoard:
     def move(self, action: int) -> TicTacToeBoard:
         # Check if the given action is valid
         if action not in self.possible_actions:
-            raise ValueError(
-                f"'{action}' is not a valid action. Possible actions: {self.possible_actions}."
-            )
+            raise ValueError(f"'{action}' is not a valid action. Possible actions: {self.possible_actions}.")
 
         # Create a new state updated by the given action
         new_state = self._state.copy()
