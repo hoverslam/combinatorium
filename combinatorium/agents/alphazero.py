@@ -7,6 +7,7 @@ from combinatorium.games.tic_tac_toe.board import TicTacToeBoard
 from typing import Callable
 from collections import deque
 from abc import ABC, abstractmethod
+from copy import deepcopy
 
 import torch
 import torch.nn.functional as F
@@ -74,7 +75,7 @@ class AlphaZeroNode:
         # Evaluate node
         model.eval()
         with torch.no_grad():
-            device = next(model.parameters()).device  # ! Might be dangerous
+            device = "cuda" if torch.cuda.is_available() else "cpu"
             state = board_encoding_fn(self._board).to(device)
             action_logits, value = model(state)
             action_probs = F.softmax(action_logits, dim=0)
@@ -156,28 +157,30 @@ class AlphaZeroMCTS:
 
         for _ in range(num_simulations):
             current_node = self._root
-            visited_nodes = []  # [(node, action), ...]
+            search_path = []  # [(node, action), ...]
 
             # 1. Select
             while not current_node.is_leaf():
                 scores = current_node.compute_scores(exploration_rate)
                 action = int(scores.argmax().item())
-                visited_nodes.append((current_node, action))
+                search_path.append((current_node, action))
                 current_node = current_node.children[action]
 
             # 2. Expand and evaluate
             value, to_play = current_node.expand(self._model, self._board_encoding_fn)
 
             # 3. Backpropagate
-            for node, action in visited_nodes:
+            for node, action in search_path:
                 node.update(value, action, to_play)
 
         # Return search probabilities of the root node
         return self._compute_search_probs(self._root, temperature)
 
-    def select_subtree(self, action: int) -> None:
-        # TODO: Keep the subtree given an actions
-        raise NotImplementedError
+    def select_subtree(self, action: int) -> AlphaZeroMCTS:
+        new_mcts = deepcopy(self)
+        new_mcts._root = self._root._children[action]
+
+        return new_mcts
 
     def _compute_search_probs(self, root: AlphaZeroNode, temperature: float) -> torch.Tensor:
         if temperature < 0.1:
@@ -282,11 +285,11 @@ class AlphaZero(ABC):
     ) -> None:
         for _ in range(num_games):
             board = TicTacToeBoard(3)
+            mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
             finished, result = board.evaluate()
             history = []  # (state, search_probs, current_player)
 
             while not finished:
-                mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
                 search_probs = mcts.run(
                     self._num_simulations,
                     self._exploration_rate,
@@ -300,6 +303,7 @@ class AlphaZero(ABC):
                 state = self._encode_board(board)
                 history.append((state, search_probs, board.player))
                 board = new_board
+                mcts = mcts.select_subtree(action)
 
             replay_buffer.add(history, result)
 
