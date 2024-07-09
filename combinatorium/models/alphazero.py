@@ -14,16 +14,16 @@ class TicTacToeFCNN(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(64, 32),
             nn.ReLU(),
         )
 
         self._policy_head = nn.Sequential(
-            nn.Linear(64, self._num_actions),
+            nn.Linear(32, self._num_actions),
         )
 
         self._value_head = nn.Sequential(
-            nn.Linear(64, 1),
+            nn.Linear(32, 1),
             nn.Tanh(),
         )
 
