@@ -111,6 +111,6 @@ AlphaZero is a reinforcement learning algorithm that utilizes self-play and a de
 
 AlphaZero plays millions of games against itself, generating training data and exploring the game space. A deep neural network, trained on this self-play data, evaluates positions and predicts both move probabilities and state values. Finally, the algorithm leverages Monte Carlo Tree Search (MCTS) to balance exploration and exploitation. MCTS uses the neural network's outputs to guide the search towards promising moves.
 
-This approach, known as model-agnostic reinforcement learning, allows AlphaZero to achieve superhuman performance in games like Go, Chess, and Shogi without relying on handcrafted rules or domain-specific knowledge.
+This approach allows AlphaZero to achieve superhuman performance in games like Go, Chess, and Shogi without relying on handcrafted rules or domain-specific knowledge.
 
 References: [Wikipedia | AlphaZero](https://de.wikipedia.org/wiki/AlphaZero), [Nature | Mastering the game of Go with deep neural networks and tree search](https://www.nature.com/articles/nature16961), [Nature | Mastering the game of Go without human knowledge](https://www.nature.com/articles/nature24270), [ArXiv | Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/abs/1712.01815)
