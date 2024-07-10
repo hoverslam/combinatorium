@@ -12,6 +12,7 @@ from copy import deepcopy
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch.optim import Optimizer
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -161,7 +162,7 @@ class AlphaZeroMCTS:
         # Return search probabilities of the root node
         return self._compute_search_probs(self._root, temperature)
 
-    def select_subtree(self, action: int) -> AlphaZeroMCTS:
+    def select_subtree_from_action(self, action: int) -> AlphaZeroMCTS:
         new_mcts = deepcopy(self)
         new_mcts._root = self._root._children[action]
 
@@ -243,14 +244,17 @@ class AlphaZero(ABC):
         buffer_size: int,
         temperature: float,
         noise: tuple[float, float] | None,
+        learning_rate: float,
+        weight_decay: float,
+        batch_size: int,
     ):
         # TODO: Make weight_decay, scheduler, lr, batch_size, etc. hyperparmeters
         replay_buffer = AlphaZeroReplayBuffer(buffer_size)
-        optimizer = torch.optim.Adam(self._model.parameters(), lr=0.001, weight_decay=0.0001)
+        optimizer = torch.optim.Adam(self._model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
         for _ in range(num_iterations):
             self._self_play(num_games, replay_buffer, temperature, noise)
-            value_loss, policy_loss = self._retrain_model(replay_buffer, optimizer)
+            value_loss, policy_loss = self._retrain_model(replay_buffer, optimizer, batch_size)
             print(f"{value_loss=:.6f}, {policy_loss=:.6f}")
 
     def save_model(self, fname: str) -> None:
@@ -268,12 +272,11 @@ class AlphaZero(ABC):
     ) -> None:
         for _ in range(num_games):
             board = TicTacToeBoard(3)
+            mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
             finished, result = board.evaluate()
             history = []  # (state, search_probs, current_player)
-
             while True:
                 # Run a MCTS from the current board.
-                mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
                 search_probs = mcts.run(
                     self._num_simulations,
                     self._exploration_rate,
@@ -289,6 +292,7 @@ class AlphaZero(ABC):
                 action = int(torch.multinomial(search_probs, 1).item())
                 board = board.move(action)
                 finished, result = board.evaluate()
+                mcts = mcts.select_subtree_from_action(action)
 
                 if finished:
                     # Since we don't need search probabilities after the finally state we can append it with fake ones.
@@ -299,12 +303,14 @@ class AlphaZero(ABC):
 
             replay_buffer.add(history, result)
 
-    def _retrain_model(self, replay_buffer: AlphaZeroReplayBuffer, optimizer) -> tuple[float, float]:
+    def _retrain_model(
+        self, replay_buffer: AlphaZeroReplayBuffer, optimizer: Optimizer, batch_size: int
+    ) -> tuple[float, float]:
         total_value_loss = 0.0
         total_policy_loss = 0.0
 
         self._model.train()
-        loader = DataLoader(replay_buffer, batch_size=64, shuffle=True)
+        loader = DataLoader(replay_buffer, batch_size, shuffle=True)
         for state, search_probs, result in loader:
             state = state.to(self._device)
             search_probs = search_probs.to(self._device)
