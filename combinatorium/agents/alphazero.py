@@ -8,6 +8,7 @@ from typing import Callable
 from collections import deque
 from abc import ABC, abstractmethod
 from copy import deepcopy
+import multiprocessing as mp
 
 import torch
 import torch.nn.functional as F
@@ -247,15 +248,23 @@ class AlphaZero(ABC):
         learning_rate: float,
         weight_decay: float,
         batch_size: int,
-    ):
-        # TODO: Make weight_decay, scheduler, lr, batch_size, etc. hyperparmeters
+    ) -> None:
         replay_buffer = AlphaZeroReplayBuffer(buffer_size)
         optimizer = torch.optim.Adam(self._model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+        num_digits = len(str(abs(num_iterations)))
 
-        for _ in range(num_iterations):
-            self._self_play(num_games, replay_buffer, temperature, noise)
+        for i in range(num_iterations):
+            results = []
+            with mp.Pool() as pool:
+                for _ in range(num_games):
+                    results.append(pool.apply_async(self._self_play, (temperature, noise)))
+
+                for r in results:
+                    history, result = r.get()
+                    replay_buffer.add(history, result)
+
             value_loss, policy_loss = self._retrain_model(replay_buffer, optimizer, batch_size)
-            print(f"{value_loss=:.6f}, {policy_loss=:.6f}")
+            print(f"{i+1:{num_digits}}/{num_iterations}: {value_loss=:.6f}, {policy_loss=:.6f}")
 
     def save_model(self, fname: str) -> None:
         torch.save(self._model.state_dict(), fname)
@@ -265,43 +274,41 @@ class AlphaZero(ABC):
 
     def _self_play(
         self,
-        num_games: int,
-        replay_buffer: AlphaZeroReplayBuffer,
         temperature: float,
         noise: tuple[float, float] | None,
-    ) -> None:
-        for _ in range(num_games):
-            board = TicTacToeBoard(3)
-            mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
+    ) -> tuple[list, int]:
+        board = TicTacToeBoard(3)
+        mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
+        finished, result = board.evaluate()
+        history = []  # (state, search_probs, current_player)
+
+        while True:
+            # Run a MCTS from the current board.
+            search_probs = mcts.run(
+                self._num_simulations,
+                self._exploration_rate,
+                temperature,
+                noise,
+            )
+
+            # Add the state, search probabilities, and current player to the history.
+            state = self._encode_board(board)
+            history.append((state, search_probs, board.player))
+
+            # Make a move based on the search probabilities from the MCTS.
+            action = int(torch.multinomial(search_probs, 1).item())
+            board = board.move(action)
             finished, result = board.evaluate()
-            history = []  # (state, search_probs, current_player)
-            while True:
-                # Run a MCTS from the current board.
-                search_probs = mcts.run(
-                    self._num_simulations,
-                    self._exploration_rate,
-                    temperature,
-                    noise,
-                )
+            mcts = mcts.select_subtree_from_action(action)
 
-                # Add the state, search probabilities, and current player to the history.
+            if finished:
+                # Since we don't need search probabilities after the finally state we can append it with fake ones.
                 state = self._encode_board(board)
+                search_probs = torch.full((self._num_actions,), 1 / self._num_actions, dtype=torch.float)
                 history.append((state, search_probs, board.player))
+                break
 
-                # Make a move based on the search probabilities from the MCTS.
-                action = int(torch.multinomial(search_probs, 1).item())
-                board = board.move(action)
-                finished, result = board.evaluate()
-                mcts = mcts.select_subtree_from_action(action)
-
-                if finished:
-                    # Since we don't need search probabilities after the finally state we can append it with fake ones.
-                    state = self._encode_board(board)
-                    search_probs = torch.full((self._num_actions,), 1 / self._num_actions, dtype=torch.float)
-                    history.append((state, search_probs, board.player))
-                    break
-
-            replay_buffer.add(history, result)
+        return history, result
 
     def _retrain_model(
         self, replay_buffer: AlphaZeroReplayBuffer, optimizer: Optimizer, batch_size: int
