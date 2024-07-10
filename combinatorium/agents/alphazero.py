@@ -4,11 +4,12 @@ from combinatorium.interfaces import Board
 from combinatorium.models import TicTacToeFCNN
 from combinatorium.games.tic_tac_toe.board import TicTacToeBoard
 
+import time
+import multiprocessing as mp
 from typing import Callable
 from collections import deque
 from abc import ABC, abstractmethod
 from copy import deepcopy
-import multiprocessing as mp
 
 import torch
 import torch.nn.functional as F
@@ -128,11 +129,17 @@ class AlphaZeroMCTS:
 
     def run(
         self,
-        num_simulations: int,
+        search_time: int | None,
+        num_simulations: int | None,
         exploration_rate: float,
         temperature: float,
         noise: tuple[float, float] | None = None,
     ) -> torch.Tensor:
+        if (search_time is None) and (num_simulations is None):
+            raise ValueError(
+                "Either 'search_time' or 'num_simulations' must be provided. Please specify at least one of these arguments."
+            )
+
         # Expand the root node immediately
         if self._root.is_leaf():
             self._root.expand(self._model, self._board_encoding_fn)
@@ -142,7 +149,9 @@ class AlphaZeroMCTS:
             epsilon, alpha = noise
             self._root.add_noise(epsilon, alpha)
 
-        for _ in range(num_simulations):
+        simulation_cnt = 0
+        start_time = time.time()
+        while True:
             current_node = self._root
             search_path = []  # [(node, action), ...]
 
@@ -159,6 +168,13 @@ class AlphaZeroMCTS:
             # 3. Backpropagate value of the leaf node along the search path
             for node, action in search_path:
                 node.update(value, action, to_play)
+
+            # Check for both abort condition. If a single one is met, stop the search
+            simulation_cnt += 1
+            if (search_time is not None) and ((time.time() - start_time) >= search_time):
+                break
+            if (num_simulations is not None) and (simulation_cnt >= num_simulations):
+                break
 
         # Return search probabilities of the root node
         return self._compute_search_probs(self._root, temperature)
@@ -214,9 +230,9 @@ class AlphaZeroReplayBuffer(Dataset):
 
 class AlphaZero(ABC):
 
-    def __init__(self, num_simulations: int, exploration_rate: float) -> None:
+    def __init__(self, search_time: int, exploration_rate: float) -> None:
         super().__init__()
-        self._num_simulations = num_simulations
+        self._search_time = search_time
         self._exploration_rate = exploration_rate  # c_puct
 
         self._device = self._device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -232,16 +248,30 @@ class AlphaZero(ABC):
         pass
 
     def act(self, board: Board) -> int:
-        mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
-        search_probs = mcts.run(self._num_simulations, self._exploration_rate, temperature=0.0)
-        action = torch.multinomial(search_probs, 1)
+        start_runtime = time.time()
 
-        return int(action.item())
+        if len(board.possible_actions) == 1:
+            action = board.possible_actions[0]
+        else:
+            mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
+            search_probs = mcts.run(
+                search_time=self._search_time,
+                num_simulations=None,
+                exploration_rate=self._exploration_rate,
+                temperature=0.0,
+            )
+            action = int(torch.multinomial(search_probs, 1).item())
+
+        runtime = time.time() - start_runtime
+        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+
+        return action
 
     def train(
         self,
         num_iterations: int,
         num_games: int,
+        num_simulations: int,
         buffer_size: int,
         temperature: float,
         noise: tuple[float, float] | None,
@@ -251,19 +281,20 @@ class AlphaZero(ABC):
     ) -> None:
         replay_buffer = AlphaZeroReplayBuffer(buffer_size)
         optimizer = torch.optim.Adam(self._model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-        num_digits = len(str(abs(num_iterations)))
 
         for i in range(num_iterations):
             results = []
             with mp.Pool() as pool:
                 for _ in range(num_games):
-                    results.append(pool.apply_async(self._self_play, (temperature, noise)))
+                    results.append(pool.apply_async(self._self_play, (num_simulations, temperature, noise)))
 
                 for r in results:
                     history, result = r.get()
                     replay_buffer.add(history, result)
 
             value_loss, policy_loss = self._retrain_model(replay_buffer, optimizer, batch_size)
+
+            num_digits = len(str(abs(num_iterations)))
             print(f"{i+1:{num_digits}}/{num_iterations}: {value_loss=:.6f}, {policy_loss=:.6f}")
 
     def save_model(self, fname: str) -> None:
@@ -274,6 +305,7 @@ class AlphaZero(ABC):
 
     def _self_play(
         self,
+        num_simulations: int,
         temperature: float,
         noise: tuple[float, float] | None,
     ) -> tuple[list, int]:
@@ -285,10 +317,11 @@ class AlphaZero(ABC):
         while True:
             # Run a MCTS from the current board.
             search_probs = mcts.run(
-                self._num_simulations,
-                self._exploration_rate,
-                temperature,
-                noise,
+                search_time=None,
+                num_simulations=num_simulations,
+                exploration_rate=self._exploration_rate,
+                temperature=temperature,
+                noise=noise,
             )
 
             # Add the state, search probabilities, and current player to the history.
@@ -343,8 +376,8 @@ class AlphaZero(ABC):
 
 class AlphaZeroTicTacToe(AlphaZero):
 
-    def __init__(self, num_simulations: int = 100, exploration_rate: float = 1.0) -> None:
-        super().__init__(num_simulations, exploration_rate)
+    def __init__(self, search_time: int = 1, exploration_rate: float = 1.0) -> None:
+        super().__init__(search_time, exploration_rate)
 
     def _initialize_model(self) -> tuple[nn.Module, int]:
         return TicTacToeFCNN(), 9
