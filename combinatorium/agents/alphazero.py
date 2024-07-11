@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from combinatorium.interfaces import Board
-from combinatorium.models import TicTacToeFCNN
+from combinatorium.models import AlphaZeroResNet
 from combinatorium.games.tic_tac_toe.board import TicTacToeBoard
+from combinatorium.games.connect_four.board import ConnectFourBoard
 
 import time
 import multiprocessing as mp
@@ -15,6 +16,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torch.optim import Optimizer
+from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -61,6 +63,9 @@ class AlphaZeroNode:
     def is_leaf(self) -> bool:
         return len(self._children) == 0
 
+    def is_terminal(self) -> bool:
+        return self._board.evaluate()[0]
+
     def expand(self, model: nn.Module, board_encoding_fn: Callable[[Board], torch.Tensor]) -> tuple[float, int]:
         legal_actions = self._board.possible_actions
         self._children = {action: AlphaZeroNode(self._board.move(action), self) for action in legal_actions}
@@ -68,10 +73,14 @@ class AlphaZeroNode:
         # Evaluate node
         model.eval()
         with torch.no_grad():
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            state = board_encoding_fn(self._board).to(device)
-            action_logits, value = model(state)
-            action_probs = F.softmax(action_logits, dim=0)
+            state = board_encoding_fn(self._board).to("cuda" if torch.cuda.is_available() else "cpu")
+            action_logits, value = model(state.unsqueeze(0))
+            action_probs = F.softmax(action_logits, dim=0).squeeze(0)
+
+        # If the current node is a terminal state we know the true value (outcome of the game)
+        if self.is_terminal():
+            value = self._board.evaluate()[1] * self._board.player
+            value = torch.tensor(value, dtype=torch.float).unsqueeze(0)
 
         # Remove invalid actions and renormalize action probabilities
         normalized_action_probs = torch.zeros_like(action_probs)
@@ -235,19 +244,20 @@ class AlphaZero(ABC):
         self._search_time = search_time
         self._exploration_rate = exploration_rate  # c_puct
 
-        self._device = self._device = "cuda" if torch.cuda.is_available() else "cpu"
-        self._model, self._num_actions = self._initialize_model()
+        self._device = "cuda" if torch.cuda.is_available() else "cpu"
+        self._model, self._board = self._initialize_model()
         self._model.to(self._device)
+        self._num_actions = len(self._board.possible_actions)
 
     @abstractmethod
-    def _initialize_model(self) -> tuple[nn.Module, int]:
+    def _initialize_model(self) -> tuple[nn.Module, Board]:
         pass
 
     @abstractmethod
     def _encode_board(self, board: Board) -> torch.Tensor:
         pass
 
-    def act(self, board: Board) -> int:
+    def act(self, board: Board, verbose: int = 0) -> int:
         start_runtime = time.time()
 
         if len(board.possible_actions) == 1:
@@ -263,7 +273,8 @@ class AlphaZero(ABC):
             action = int(torch.multinomial(search_probs, 1).item())
 
         runtime = time.time() - start_runtime
-        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+        if verbose >= 2:
+            print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 
@@ -273,29 +284,37 @@ class AlphaZero(ABC):
         num_games: int,
         num_simulations: int,
         buffer_size: int,
-        temperature: float,
+        temperature: tuple[float, int, float],
         noise: tuple[float, float] | None,
-        learning_rate: float,
+        learning_rate: tuple[float, list[int], float],
         weight_decay: float,
         batch_size: int,
     ) -> None:
+        lr, milestones, gamma = learning_rate
         replay_buffer = AlphaZeroReplayBuffer(buffer_size)
-        optimizer = torch.optim.Adam(self._model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+        optimizer = torch.optim.Adam(self._model.parameters(), lr=lr, weight_decay=weight_decay)
+        scheduler = MultiStepLR(optimizer, milestones, gamma)
 
         for i in range(num_iterations):
-            results = []
+            model_state_dict = self._model.state_dict()
             with mp.Pool() as pool:
+                results = []
                 for _ in range(num_games):
-                    results.append(pool.apply_async(self._self_play, (num_simulations, temperature, noise)))
+                    results.append(
+                        pool.apply_async(self._self_play, (model_state_dict, num_simulations, temperature, noise))
+                    )
 
                 for r in results:
                     history, result = r.get()
                     replay_buffer.add(history, result)
 
-            value_loss, policy_loss = self._retrain_model(replay_buffer, optimizer, batch_size)
+            value_loss, policy_loss = self._retrain_model(replay_buffer, optimizer, scheduler, batch_size)
+
+            last_lr = scheduler.get_last_lr()
+            scheduler.step()
 
             num_digits = len(str(abs(num_iterations)))
-            print(f"{i+1:{num_digits}}/{num_iterations}: {value_loss=:.6f}, {policy_loss=:.6f}")
+            print(f"{i+1:{num_digits}}/{num_iterations}: {value_loss=:.4f}, {policy_loss=:.4f}, lr={last_lr[0]}")
 
     def save_model(self, fname: str) -> None:
         torch.save(self._model.state_dict(), fname)
@@ -305,22 +324,32 @@ class AlphaZero(ABC):
 
     def _self_play(
         self,
+        model_state_dict: dict,
         num_simulations: int,
-        temperature: float,
+        temperature: tuple[float, int, float],
         noise: tuple[float, float] | None,
     ) -> tuple[list, int]:
-        board = TicTacToeBoard(3)
-        mcts = AlphaZeroMCTS(self._model, board, self._encode_board, self._num_actions)
-        finished, result = board.evaluate()
-        history = []  # (state, search_probs, current_player)
+        model, board = self._initialize_model()
+        model.load_state_dict(model_state_dict)
+        mcts = AlphaZeroMCTS(model, board, self._encode_board, self._num_actions)
 
+        round = 0
+        history = []  # (state, search_probs, current_player)
         while True:
+            # Set temperature
+            if round < temperature[1]:
+                current_temp = temperature[0]
+            else:
+                current_temp = temperature[2]
+
+            print(current_temp)
+
             # Run a MCTS from the current board.
             search_probs = mcts.run(
                 search_time=None,
                 num_simulations=num_simulations,
                 exploration_rate=self._exploration_rate,
-                temperature=temperature,
+                temperature=current_temp,
                 noise=noise,
             )
 
@@ -341,10 +370,12 @@ class AlphaZero(ABC):
                 history.append((state, search_probs, board.player))
                 break
 
+            round += 1
+
         return history, result
 
     def _retrain_model(
-        self, replay_buffer: AlphaZeroReplayBuffer, optimizer: Optimizer, batch_size: int
+        self, replay_buffer: AlphaZeroReplayBuffer, optimizer: Optimizer, scheduler: MultiStepLR, batch_size: int
     ) -> tuple[float, float]:
         total_value_loss = 0.0
         total_policy_loss = 0.0
@@ -379,17 +410,46 @@ class AlphaZeroTicTacToe(AlphaZero):
     def __init__(self, search_time: int = 1, exploration_rate: float = 1.0) -> None:
         super().__init__(search_time, exploration_rate)
 
-    def _initialize_model(self) -> tuple[nn.Module, int]:
-        return TicTacToeFCNN(), 9
+    def _initialize_model(self) -> tuple[nn.Module, Board]:
+        model = AlphaZeroResNet(input_dim=(3, 3), input_channels=3, num_filters=32, num_blocks=3, num_actions=9)
+        board = TicTacToeBoard(3)
+
+        return model, board
 
     def _encode_board(self, board: Board) -> torch.Tensor:
         state = torch.from_numpy(board.state).type(torch.float)
-        encoded_state = torch.concat(
+        encoded_state = torch.stack(
             [
-                (state == 1).ravel(),
-                (state == -1).ravel(),
-                torch.ones(1) if board.player == 1 else torch.zeros(1),
-            ]
+                (state == 1),
+                (state == -1),
+                torch.ones_like(state) if board.player == 1 else torch.zeros_like(state),
+            ],
+            dim=0,
+        )
+
+        return encoded_state
+
+
+class AlphaZeroConnectFour(AlphaZero):
+
+    def __init__(self, search_time: int = 3, exploration_rate: float = 1.0) -> None:
+        super().__init__(search_time, exploration_rate)
+
+    def _initialize_model(self) -> tuple[nn.Module, Board]:
+        model = AlphaZeroResNet(input_dim=(6, 7), input_channels=3, num_filters=64, num_blocks=5, num_actions=7)
+        board = ConnectFourBoard()
+
+        return model, board
+
+    def _encode_board(self, board: Board) -> torch.Tensor:
+        state = torch.from_numpy(board.state).type(torch.float)
+        encoded_state = torch.stack(
+            [
+                (state == 1),
+                (state == -1),
+                torch.ones_like(state) if board.player == 1 else torch.zeros_like(state),
+            ],
+            dim=0,
         )
 
         return encoded_state
