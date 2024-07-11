@@ -27,7 +27,7 @@ class MCTSAgent:
         super().__init__()
         self._search_time = search_time
 
-    def act(self, board: Board) -> int:
+    def act(self, board: Board, verbose: int = 0) -> int:
         start_runtime = time.time()
 
         if len(board.possible_actions) == 1:
@@ -49,7 +49,8 @@ class MCTSAgent:
             action = self._find_best_action(root)
 
         runtime = time.time() - start_runtime
-        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+        if verbose >= 2:
+            print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 
@@ -151,9 +152,7 @@ class MCTSNode:
         if self._visits == 0:
             return float("inf")
 
-        score = self._wins / self._visits + self._c * math.sqrt(
-            math.log(self._parent._visits) / self._visits
-        )
+        score = self._wins / self._visits + self._c * math.sqrt(math.log(self._parent._visits) / self._visits)
 
         return score
 
