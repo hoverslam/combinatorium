@@ -13,15 +13,7 @@ class HumanAgent:
         """Initialize a new human player."""
         super().__init__()
 
-    def act(self, board: Board) -> int:
-        """Prompts the user for a valid action and returns the integer action value.
-
-        Args:
-            board (Board): The current state of the game board.
-
-        Returns:
-            int: The integer value representing the chosen action by the human player.
-        """
+    def act(self, board: Board, verbose: int = 0) -> int:
         start_runtime = time.time()
 
         action = -1
@@ -37,7 +29,8 @@ class HumanAgent:
                 print(f"Input '{action}' is not a valid action!")
 
         runtime = time.time() - start_runtime
-        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+        if verbose >= 2:
+            print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 

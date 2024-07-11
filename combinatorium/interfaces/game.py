@@ -21,6 +21,13 @@ class Game(Protocol):
         """Reset the game to its initial state."""
         ...
 
-    def run(self) -> None:
-        """Start and run the game loop."""
+    def run(self, verbose: int = 0) -> None:
+        """Start and run the game loop.
+
+        Args:
+          verbose (int, optional): Controls the verbosity of the game's output during execution. Defaults to 0.
+              * 0: No additional output.
+              * >= 1: Print the end result of the game (winner, score, etc.).
+              * >= 2: Print the selected actions throughout the game.
+        """
         ...

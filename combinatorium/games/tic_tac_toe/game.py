@@ -27,19 +27,20 @@ class TicTacToe:
         self._players = {1: self._player_one, -1: self._player_two}
         self._round = 1
 
-    def run(self) -> None:
+    def run(self, verbose: int = 0) -> None:
         finished, _ = self._board.evaluate()
 
         while not finished:
             print(self, end="\n")
-            action = self._players[self._board.player].act(self._board)
+            action = self._players[self._board.player].act(self._board, verbose)
             new_board = self._board.move(action)
             finished, _ = new_board.evaluate()      
 
             self._board = new_board
             self._round += 1
         
-        self._show_final_result()        
+        if verbose >= 1:
+            self._show_final_result()         
         
     def _show_final_result(self) -> None:
         """Print the game's outcome to the console.

@@ -4,9 +4,7 @@ from combinatorium.utils import GAMES, AGENTS, load_game
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="Combinatorium", description="A collection of combinatorial games."
-    )
+    parser = argparse.ArgumentParser(prog="Combinatorium", description="A collection of combinatorial games.")
     parser.add_argument(
         "-g",
         required=True,
@@ -32,4 +30,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     game = load_game(args.g, args.p1, args.p2, "./combinatorium/configs/agents.yaml")
     game.reset()
-    game.run()
+    game.run(verbose=2)

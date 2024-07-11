@@ -23,15 +23,7 @@ class MinimaxAgent:
         super().__init__()
         self._depth = depth
 
-    def act(self, board: Board) -> int:
-        """Choose the best action for the current board state using Minimax.
-
-        Args:
-            board (Board): The current state of the game board.
-
-        Returns:
-            int: The action chosen by the agent.
-        """
+    def act(self, board: Board, verbose: int = 0) -> int:
         start_runtime = time.time()
 
         # Since we want the best action for a given game state, we don't make an initial call to the
@@ -52,7 +44,8 @@ class MinimaxAgent:
         action = max_keys[0] if (len(max_keys) == 1) else random.choice(max_keys)
 
         runtime = time.time() - start_runtime
-        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+        if verbose >= 2:
+            print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 
@@ -107,15 +100,7 @@ class AlphaBetaAgent:
         super().__init__()
         self._depth = depth
 
-    def act(self, board: Board) -> int:
-        """Choose the best action for the current board state using alpha-beta pruning.
-
-        Args:
-            board (Board): The current state of the game board.
-
-        Returns:
-            int: The action chosen by the agent.
-        """
+    def act(self, board: Board, verbose: int = 0) -> int:
         start_runtime = time.time()
 
         # Since we want the best action for a given game state, we don't make an initial call to the
@@ -138,13 +123,12 @@ class AlphaBetaAgent:
         action = max_keys[0] if (len(max_keys) == 1) else random.choice(max_keys)
 
         runtime = time.time() - start_runtime
-        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+        if verbose >= 2:
+            print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 
-    def _alpha_beta(
-        self, board: Board, depth, alpha: float, beta: float, maximizing_player: int
-    ) -> float:
+    def _alpha_beta(self, board: Board, depth, alpha: float, beta: float, maximizing_player: int) -> float:
         """Perform the Minimax recursive search with alpha-beta pruning to find the best action.
 
         Args:
@@ -201,15 +185,7 @@ class NegamaxAgent:
         super().__init__()
         self._depth = depth
 
-    def act(self, board: Board) -> int:
-        """Choose the best action for the current board.
-
-        Args:
-            board (Board): The current state of the game board.
-
-        Returns:
-            int: The action chosen by the agent.
-        """
+    def act(self, board: Board, verbose: int = 0) -> int:
         start_runtime = time.time()
 
         # Since we want the best action for a given game state, we don't make an initial call to the
@@ -226,7 +202,8 @@ class NegamaxAgent:
         action = max_keys[0] if (len(max_keys) == 1) else random.choice(max_keys)
 
         runtime = time.time() - start_runtime
-        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+        if verbose >= 2:
+            print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 
