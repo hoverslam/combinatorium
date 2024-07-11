@@ -1,5 +1,5 @@
-from combinatorium.models.alphazero import TicTacToeFCNN
+from combinatorium.models.cnn import AlphaZeroResNet
 
 __all__ = [
-    "TicTacToeFCNN",
+    "AlphaZeroResNet",
 ]
