@@ -40,12 +40,12 @@ pip install -r requirements.txt
 ## Usage
 
 ```powershell
-python -m main -g "ConnectFour" -p1 "Human" -p2 "Random"
+python -m play -g "ConnectFour" -p1 "Human" -p2 "Random"
 ```
 
 For possible options use ```--help``` :
 ```powershell
-python -m main --help
+python -m play --help
 ```
 ```
 usage: Combinatorium [-h] -g {TicTacToe,ConnectFour} -p1 {Human,Random,Minimax,Negamax,AlphaBeta} -p2

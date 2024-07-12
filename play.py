@@ -1,6 +1,7 @@
-import argparse
+from combinatorium.config import AgentConfig, AGENTS, GAMES
+from combinatorium.games import *
 
-from combinatorium.utils import GAMES, AGENTS, load_game
+import argparse
 
 
 if __name__ == "__main__":
@@ -9,25 +10,27 @@ if __name__ == "__main__":
         "-g",
         required=True,
         type=str,
-        choices=GAMES.keys(),
+        choices=GAMES,
         help=f"select a game",
     )
     parser.add_argument(
         "-p1",
         required=True,
         type=str,
-        choices=AGENTS.keys(),
+        choices=AGENTS,
         help="select an agent for player one",
     )
     parser.add_argument(
         "-p2",
         required=True,
         type=str,
-        choices=AGENTS.keys(),
+        choices=AGENTS,
         help="select an agent for player two",
     )
 
     args = parser.parse_args()
-    game = load_game(args.g, args.p1, args.p2, "./combinatorium/configs/agents.yaml")
+    player_1 = AgentConfig(f"./combinatorium/configs/{args.p1}.yaml").load_agent(args.g)
+    player_2 = AgentConfig(f"./combinatorium/configs/{args.p2}.yaml").load_agent(args.g)
+    game = globals()[args.g](player_1, player_2)
     game.reset()
     game.run(verbose=2)

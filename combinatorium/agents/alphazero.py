@@ -237,7 +237,7 @@ class AlphaZeroReplayBuffer(Dataset):
         return state, search_probs, result.unsqueeze(0)
 
 
-class AlphaZero(ABC):
+class AlphaZeroAgent(ABC):
 
     def __init__(self, search_time: int, exploration_rate: float) -> None:
         super().__init__()
@@ -326,7 +326,7 @@ class AlphaZero(ABC):
         self,
         model_state_dict: dict,
         num_simulations: int,
-        temperature: tuple[float, int, float],
+        temperature: tuple[float, int, float] | None,
         noise: tuple[float, float] | None,
     ) -> tuple[list, int]:
         model, board = self._initialize_model()
@@ -337,12 +337,13 @@ class AlphaZero(ABC):
         history = []  # (state, search_probs, current_player)
         while True:
             # Set temperature
-            if round < temperature[1]:
-                current_temp = temperature[0]
+            if temperature is None:
+                current_temp = 1.0
             else:
-                current_temp = temperature[2]
-
-            print(current_temp)
+                if round < temperature[1]:
+                    current_temp = temperature[0]
+                else:
+                    current_temp = temperature[2]
 
             # Run a MCTS from the current board.
             search_probs = mcts.run(
@@ -408,7 +409,7 @@ class AlphaZero(ABC):
         return f"AlphaZero, search_time={self._search_time}s"
 
 
-class AlphaZeroTicTacToe(AlphaZero):
+class AlphaZeroTicTacToeAgent(AlphaZeroAgent):
 
     def __init__(self, search_time: int = 1, exploration_rate: float = 1.0) -> None:
         super().__init__(search_time, exploration_rate)
@@ -433,7 +434,7 @@ class AlphaZeroTicTacToe(AlphaZero):
         return encoded_state
 
 
-class AlphaZeroConnectFour(AlphaZero):
+class AlphaZeroConnectFourAgent(AlphaZeroAgent):
 
     def __init__(self, search_time: int = 3, exploration_rate: float = 1.0) -> None:
         super().__init__(search_time, exploration_rate)

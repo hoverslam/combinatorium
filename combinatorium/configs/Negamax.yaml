@@ -1,0 +1,9 @@
+TicTacToe:
+  class_name: "NegamaxAgent"
+  settings:
+      depth: 9 
+
+ConnectFour:
+  class_name: "NegamaxAgent"
+  settings:
+      depth: 5

@@ -1,0 +1,9 @@
+TicTacToe:
+  class_name: "MinimaxAgent"
+  settings:
+      depth: 9 
+
+ConnectFour:
+  class_name: "MinimaxAgent"
+  settings:
+      depth: 5
