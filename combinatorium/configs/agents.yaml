@@ -27,6 +27,6 @@ ConnectFour:
   MCTS:
     search_time: 15
   AZ_ConnectFour:
-    search_time: 5
+    search_time: 3
     exploration_rate: 1.0
 

@@ -34,7 +34,9 @@ GAMES = {
 def load_agent(name: str, kwargs: dict) -> Agent:
     agent = AGENTS[name](**kwargs)
     if isinstance(agent, AlphaZeroTicTacToe):
-        agent.load_model("./combinatorium/pretrained/az_tictactoe_5000_200.pt")
+        agent.load_model("./combinatorium/pretrained/az_tictactoe_500_100.pt")
+    if isinstance(agent, AlphaZeroConnectFour):
+        agent.load_model("./combinatorium/pretrained/az_connectfour_1000_200.pt")
 
     return AGENTS[name](**kwargs)
 
