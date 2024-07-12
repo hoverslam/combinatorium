@@ -404,6 +404,9 @@ class AlphaZero(ABC):
 
         return float(mean_value_loss), float(mean_policy_loss)
 
+    def __str__(self) -> str:
+        return f"AlphaZero, search_time={self._search_time}s"
+
 
 class AlphaZeroTicTacToe(AlphaZero):
 
