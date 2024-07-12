@@ -15,19 +15,13 @@ class RandomAgent:
         """Initialize an agent that plays randomly."""
         super().__init__()
 
-    def act(self, board: Board) -> int:
-        """Choose a random action given a board.
-
-        Args:
-            board (Board): The current state of the game board.
-
-        Return:
-            int: A randomly chosen action from the list of possible actions.
-        """
+    def act(self, board: Board, verbose: int = 0) -> int:
         start_runtime = time.time()
         action = random.choice(board.possible_actions)
         runtime = time.time() - start_runtime
-        print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
+
+        if verbose >= 2:
+            print(f"# Selected action: {action} ({runtime=:.3f}s)\n")
 
         return action
 

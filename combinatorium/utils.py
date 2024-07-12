@@ -1,4 +1,4 @@
-from combinatorium.interfaces import Agent, Game
+from combinatorium.interfaces import Agent, Game, Board
 from combinatorium.games import ConnectFour, TicTacToe
 from combinatorium.agents import (
     RandomAgent,
@@ -7,6 +7,8 @@ from combinatorium.agents import (
     NegamaxAgent,
     HumanAgent,
     MCTSAgent,
+    AlphaZeroTicTacToe,
+    AlphaZeroConnectFour,
 )
 
 import yaml
@@ -19,6 +21,8 @@ AGENTS = {
     "Negamax": NegamaxAgent,
     "AlphaBeta": AlphaBetaAgent,
     "MCTS": MCTSAgent,
+    "AZ_TicTacToe": AlphaZeroTicTacToe,
+    "AZ_ConnectFour": AlphaZeroConnectFour,
 }
 
 GAMES = {
@@ -28,6 +32,12 @@ GAMES = {
 
 
 def load_agent(name: str, kwargs: dict) -> Agent:
+    agent = AGENTS[name](**kwargs)
+    if isinstance(agent, AlphaZeroTicTacToe):
+        agent.load_model("./combinatorium/pretrained/az_tictactoe_500_100.pt")
+    if isinstance(agent, AlphaZeroConnectFour):
+        agent.load_model("./combinatorium/pretrained/az_connectfour_1000_200.pt")
+
     return AGENTS[name](**kwargs)
 
 

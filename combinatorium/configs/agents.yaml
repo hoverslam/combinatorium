@@ -12,6 +12,9 @@ TicTacToe:
     depth: 9
   MCTS:
     search_time: 5
+  AZ_TicTacToe:
+    search_time: 1
+    exploration_rate: 1.0
 
 # Connect Four ========================
 ConnectFour:
@@ -23,4 +26,7 @@ ConnectFour:
     depth: 7
   MCTS:
     search_time: 15
+  AZ_ConnectFour:
+    search_time: 3
+    exploration_rate: 1.0
 
