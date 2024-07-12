@@ -1,0 +1,5 @@
+TicTacToe:
+  class_name: "RandomAgent"
+
+ConnectFour:
+  class_name: "RandomAgent"

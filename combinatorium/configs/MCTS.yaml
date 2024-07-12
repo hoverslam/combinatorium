@@ -1,0 +1,9 @@
+TicTacToe:
+  class_name: "MCTSAgent"
+  settings:
+    search_time: 5
+
+ConnectFour:
+  class_name: "MCTSAgent"
+  settings:
+    search_time: 15
