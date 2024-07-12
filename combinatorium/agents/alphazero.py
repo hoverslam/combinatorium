@@ -21,14 +21,29 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class AlphaZeroNode:
+    """Represents a node in the AlphaZero MCTS tree."""
 
     def __init__(self, board: Board, parent: AlphaZeroNode | None) -> None:
+        """Initializes an AlphaZeroNode.
+
+        Args:
+            board (Board): The game board at this node.
+            parent (AlphaZeroNode | None): The parent node of this node.
+        """
         self._board = board
         self._parent = parent
         self._children = {}  # dictionary with <action, child> as key-value pairs
 
     @property
     def children(self) -> list:
+        """Returns the child nodes.
+
+        Raises:
+            ValueError: If the node is a leaf.
+
+        Returns:
+            list: List of child nodes.
+        """
         if self.is_leaf():
             raise ValueError("This unexpanded node has no child nodes.")
 
@@ -36,6 +51,14 @@ class AlphaZeroNode:
 
     @property
     def actions(self) -> list:
+        """Returns the possible actions from this node.
+
+        Raises:
+            ValueError: If the node is a leaf.
+
+        Returns:
+            list: List of possible actions.
+        """
         if self.is_leaf():
             raise ValueError("This unexpanded node has no actions because it has no child nodes.")
 
@@ -43,12 +66,31 @@ class AlphaZeroNode:
 
     @property
     def visits(self) -> torch.Tensor:
+        """Returns the visit statistics of this node.
+
+        Raises:
+            ValueError: If the node is a leaf.
+
+        Returns:
+            torch.Tensor: Tensor of visit counts.
+        """
         if self.is_leaf():
             raise ValueError("This unexpanded node has no visit statistics because it has no child nodes.")
 
         return self._visits
 
     def compute_scores(self, exploration_rate: float) -> torch.Tensor:
+        """Computes the scores for each child node.
+
+        Args:
+            exploration_rate (float): The exploration rate for the PUCT algorithm.
+
+        Raises:
+            ValueError: If the node is a leaf.
+
+        Returns:
+            torch.Tensor: Tensor of computed scores.
+        """
         if self.is_leaf():
             raise ValueError("This unexpanded node cannot compute scores because it has no child nodes.")
 
@@ -61,12 +103,31 @@ class AlphaZeroNode:
         return self._mean_action_values + puct_scores
 
     def is_leaf(self) -> bool:
+        """Checks if the node is a leaf.
+
+        Returns:
+            bool: True if the node is a leaf, otherwise False.
+        """
         return len(self._children) == 0
 
     def is_terminal(self) -> bool:
+        """Checks if the node is a terminal node.
+
+        Returns:
+            bool: True if the node is terminal, otherwise False.
+        """
         return self._board.evaluate()[0]
 
     def expand(self, model: nn.Module, board_encoding_fn: Callable[[Board], torch.Tensor]) -> tuple[float, int]:
+        """Expands the node by generating child nodes.
+
+        Args:
+            model (nn.Module): The neural network model for evaluation.
+            board_encoding_fn (Callable[[Board], torch.Tensor]): Function to encode the board state.
+
+        Returns:
+            tuple[float, int]: The value and player of the node.
+        """
         legal_actions = self._board.possible_actions
         self._children = {action: AlphaZeroNode(self._board.move(action), self) for action in legal_actions}
 
@@ -97,11 +158,24 @@ class AlphaZeroNode:
         return value.item(), self._board.player
 
     def update(self, value: float, action: int, to_play: int) -> None:
+        """Updates the node statistics.
+
+        Args:
+            value (float): The value to update.
+            action (int): The action taken.
+            to_play (int): The player to update.
+        """
         self._visits[action] += 1
         self._total_action_values[action] += value if self._board.player == to_play else -1 * value
         self._mean_action_values = self._total_action_values / (self._visits + 1e-10)
 
     def add_noise(self, epsilon: float, alpha: float) -> None:
+        """Adds Dirichlet noise to the node.
+
+        Args:
+            epsilon (float): The epsilon value for noise.
+            alpha (float): The alpha value for noise.
+        """
         noise = torch.distributions.Dirichlet(torch.full(self._prior_probs.shape, alpha)).sample()
         self._prior_probs = (1 - epsilon) * self._prior_probs + epsilon * noise
         self._prior_probs = self._prior_probs / self._prior_probs.sum()
@@ -123,6 +197,7 @@ class AlphaZeroNode:
 
 
 class AlphaZeroMCTS:
+    """Implements the AlphaZero Monte Carlo Tree Search (MCTS) algorithm."""
 
     def __init__(
         self,
@@ -131,6 +206,14 @@ class AlphaZeroMCTS:
         board_encoding_fn: Callable[[Board], torch.Tensor],
         num_actions: int,
     ) -> None:
+        """Initializes the AlphaZeroMCTS.
+
+        Args:
+            model (nn.Module): The neural network model.
+            board (Board): The initial game board.
+            board_encoding_fn (Callable[[Board], torch.Tensor]): Function to encode the board state.
+            num_actions (int): Number of possible actions.
+        """
         self._model = model
         self._board_encoding_fn = board_encoding_fn
         self._num_actions = num_actions
@@ -144,6 +227,22 @@ class AlphaZeroMCTS:
         temperature: float,
         noise: tuple[float, float] | None = None,
     ) -> torch.Tensor:
+        """Runs the MCTS algorithm.
+
+        Args:
+            search_time (int | None): The time to run the search.
+            num_simulations (int | None): The number of simulations to run.
+            exploration_rate (float): The exploration rate for the PUCT algorithm.
+            temperature (float): The temperature for exploration.
+            noise (tuple[float, float] | None): Optional tuple representing epsilon and alpha
+                parameters for Dirichlet noise.
+
+        Raises:
+            ValueError: If neither search_time nor num_simulations is provided.
+
+        Returns:
+            torch.Tensor: Search probabilities for the root node.
+        """
         if (search_time is None) and (num_simulations is None):
             raise ValueError(
                 "Either 'search_time' or 'num_simulations' must be provided. Please specify at least one of these arguments."
@@ -189,12 +288,29 @@ class AlphaZeroMCTS:
         return self._compute_search_probs(self._root, temperature)
 
     def select_subtree_from_action(self, action: int) -> AlphaZeroMCTS:
+        """Selects a subtree based on an action.
+
+        Args:
+            action (int): The action to select the subtree.
+
+        Returns:
+            AlphaZeroMCTS: The selected subtree.
+        """
         new_mcts = deepcopy(self)
         new_mcts._root = self._root._children[action]
 
         return new_mcts
 
     def _compute_search_probs(self, root: AlphaZeroNode, temperature: float) -> torch.Tensor:
+        """Computes the search probabilities.
+
+        Args:
+            root (AlphaZeroNode): The root node.
+            temperature (float): The temperature for exploration.
+
+        Returns:
+            torch.Tensor: Search probabilities for the root node.
+        """
         if temperature < 0.1:
             # If temperature is smaller than 0.1 we give the most visited action a probability of 1.
             search_probs = torch.zeros_like(root.visits, dtype=torch.float)
@@ -212,8 +328,14 @@ class AlphaZeroMCTS:
 
 
 class AlphaZeroReplayBuffer(Dataset):
+    """A replay buffer for storing game data for AlphaZero."""
 
     def __init__(self, size: int) -> None:
+        """Initializes the replay buffer.
+
+        Args:
+            size (int): The maximum size of the buffer.
+        """
         super().__init__()
         self._size = size
         self._states = deque(maxlen=size)
@@ -221,6 +343,12 @@ class AlphaZeroReplayBuffer(Dataset):
         self._results = deque(maxlen=size)
 
     def add(self, history: list, result: int) -> None:
+        """Adds game data to the buffer.
+
+        Args:
+            history (list): The history of states, search probabilities, and players.
+            result (int): The result of the game.
+        """
         for state, search_probs, player in history:
             self._states.append(state)
             self._search_probs.append(search_probs)
@@ -238,11 +366,18 @@ class AlphaZeroReplayBuffer(Dataset):
 
 
 class AlphaZeroAgent(ABC):
+    """Abstract base class for an AlphaZero agent. Each game requires a separate instance of an agent derived from this class."""
 
     def __init__(self, search_time: int, exploration_rate: float) -> None:
+        """Initializes the AlphaZero agent.
+
+        Args:
+            search_time (int): The search time for the MCTS.
+            exploration_rate (float): The exploration rate for the PUCT algorithm.
+        """
         super().__init__()
         self._search_time = search_time
-        self._exploration_rate = exploration_rate  # c_puct
+        self._exploration_rate = exploration_rate
 
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
         self._model, self._board = self._initialize_model()
@@ -251,10 +386,23 @@ class AlphaZeroAgent(ABC):
 
     @abstractmethod
     def _initialize_model(self) -> tuple[nn.Module, Board]:
+        """Initializes the model and board.
+
+        Returns:
+            tuple[nn.Module, Board]: The model and board.
+        """
         pass
 
     @abstractmethod
     def _encode_board(self, board: Board) -> torch.Tensor:
+        """Encodes the board state.
+
+        Args:
+            board (Board): The game board.
+
+        Returns:
+            torch.Tensor: The encoded board state.
+        """
         pass
 
     def act(self, board: Board, verbose: int = 0) -> int:
@@ -290,6 +438,22 @@ class AlphaZeroAgent(ABC):
         weight_decay: float,
         batch_size: int,
     ) -> None:
+        """Trains the agent.
+
+        Args:
+            num_iterations (int): Number of training iterations.
+            num_games (int): Number of games per iteration.
+            num_simulations (int): Number of simulations per game.
+            buffer_size (int): Size of the replay buffer.
+            temperature (tuple[float, int, float] | None): Tuple representing initial temperature,
+                moves before reducing, and final temperature value for exploration.
+            noise (tuple[float, float] | None): Optional tuple representing epsilon and alpha
+                parameters for Dirichlet noise.
+            learning_rate (tuple[float, list[int], float]): Tuple representing initial learning rate,
+                milestones for learning rate decay, and decay factor (gamma) for the optimizer.
+            weight_decay (float): Weight decay for the optimizer.
+            batch_size (int): Batch size for training.
+        """
         lr, milestones, gamma = learning_rate
         replay_buffer = AlphaZeroReplayBuffer(buffer_size)
         optimizer = torch.optim.Adam(self._model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -317,9 +481,19 @@ class AlphaZeroAgent(ABC):
             print(f"{i+1:{num_digits}}/{num_iterations}: {value_loss=:.4f}, {policy_loss=:.4f}, lr={last_lr[0]}")
 
     def save_model(self, fname: str) -> None:
+        """Saves the model to a file.
+
+        Args:
+            fname (str): The filename to save the model.
+        """
         torch.save(self._model.state_dict(), fname)
 
     def load_model(self, fname: str) -> None:
+        """Loads the model from a file.
+
+        Args:
+            fname (str): The filename to load the model.
+        """
         self._model.load_state_dict(torch.load(fname))
 
     def _self_play(
@@ -329,6 +503,19 @@ class AlphaZeroAgent(ABC):
         temperature: tuple[float, int, float] | None,
         noise: tuple[float, float] | None,
     ) -> tuple[list, int]:
+        """Performs self-play to generate training data.
+
+        Args:
+            model_state_dict (dict): The state dictionary of the model.
+            num_simulations (int): Number of simulations per move.
+            temperature (tuple[float, int, float] | None): Tuple representing initial temperature,
+                moves before reducing, and final temperature value for exploration.
+            noise (tuple[float, float] | None): Optional tuple representing epsilon and alpha
+                parameters for Dirichlet noise.
+
+        Returns:
+            tuple[list, int]: The history of the game and the result.
+        """
         model, board = self._initialize_model()
         model.load_state_dict(model_state_dict)
         mcts = AlphaZeroMCTS(model, board, self._encode_board, self._num_actions)
@@ -378,6 +565,14 @@ class AlphaZeroAgent(ABC):
     def _retrain_model(
         self, replay_buffer: AlphaZeroReplayBuffer, optimizer: Optimizer, scheduler: MultiStepLR, batch_size: int
     ) -> tuple[float, float]:
+        """Retrains the model using the replay buffer.
+
+        Args:
+            replay_buffer (AlphaZeroReplayBuffer): The replay buffer.
+            optimizer (Optimizer): The optimizer.
+            scheduler (MultiStepLR): The learning rate scheduler.
+            batch_size (int): The batch size for training.
+        """
         total_value_loss = 0.0
         total_policy_loss = 0.0
 
@@ -410,6 +605,7 @@ class AlphaZeroAgent(ABC):
 
 
 class AlphaZeroTicTacToeAgent(AlphaZeroAgent):
+    """AlphaZero agent implementation for the Tic-Tac-Toe game."""
 
     def __init__(self, search_time: int = 1, exploration_rate: float = 1.0) -> None:
         super().__init__(search_time, exploration_rate)
@@ -435,6 +631,7 @@ class AlphaZeroTicTacToeAgent(AlphaZeroAgent):
 
 
 class AlphaZeroConnectFourAgent(AlphaZeroAgent):
+    """AlphaZero agent implementation for the Connect Four game."""
 
     def __init__(self, search_time: int = 3, exploration_rate: float = 1.0) -> None:
         super().__init__(search_time, exploration_rate)
