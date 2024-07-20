@@ -7,19 +7,19 @@ Welcome to Combinatorium, a collection of classic two-player combinatorial games
 
 1. Clone the repository:
 
-```bash
+```
 git clone https://github.com/hoverslam/combinatorium
 ```
 
 2. Navigate to the directory:
 
-```bash
+```
 cd combinatorium
 ```
 
-3. Set up a virtual environment:
+3. (Optional) Set up a virtual environment:
 
-```bash
+```
 # Create a virtual environment
 python -3.12 -m venv .venv
 
@@ -30,10 +30,16 @@ python -3.12 -m venv .venv
 source .venv/bin/activate
 ```
 
-4. Install the dependencies:
+4. (Optional) Install PyTorch with CUDA support:
 
-```powershell
-pip install -r requirements.txt
+```
+pip3 install torch==2.2.1 --index-url https://download.pytorch.org/whl/cu118
+```
+
+5. Install the dependencies:
+
+```
+pip3 install -r requirements.txt
 ```
 
 
