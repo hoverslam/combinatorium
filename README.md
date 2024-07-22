@@ -46,7 +46,7 @@ pip3 install -r requirements.txt
 ## Usage
 
 ```powershell
-python -m play -g "ConnectFour" -p1 "Human" -p2 "Random"
+python -m play -g "ConnectFour" -p1 "Human" -p2 "AlphaZero"
 ```
 
 For possible options use ```--help``` :
